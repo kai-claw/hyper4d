@@ -119,10 +119,12 @@
 }
 
 /* Hide all UI elements in immersive mode */
+body.immersive-mode .controls,
 body.immersive-mode .controls-panel,
 body.immersive-mode .info-panel,
 body.immersive-mode .help-modal,
 body.immersive-mode .tutorial-overlay,
+body.immersive-mode .tutorial-restart-btn,
 body.immersive-mode .tour-mode,
 body.immersive-mode .learn-mode,
 body.immersive-mode .comparison-mode,

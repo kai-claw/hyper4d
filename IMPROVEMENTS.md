@@ -161,6 +161,97 @@
 
 ---
 
+# **PASS 9: COMPETITIVE COMPARISON + FINAL POLISH** 🏆
+
+## Competitive Landscape (Researched 2026-02-01)
+
+### Top Competitors Analyzed
+
+| Tool | Strengths | Weaknesses |
+|------|-----------|------------|
+| **4D Pardesco** (4d.pardesco.com) | 1,700+ polytopes, stereographic curved edges, premium feel, FAQ, monetised | Focused on single viewer, no tutorial, paywall for exports |
+| **Bailey Snyder Interactive 4D** | Excellent progressive education, clean pedagogy | Simpler visuals, fewer shapes |
+| **Tesseract Explorer** (tsherif) | Clean single-shape focus, WebGL 2, cutout rendering | Only tesseract, no mobile, limited controls |
+| **4D Toys** (marctenbosch.com) | Physics engine, playful VR, 100+ scenes, cultural impact | Not free web — iOS/Steam/Quest only |
+| **math.union.edu 4D models** | Academic credibility, multiple shapes | Outdated UI, no interactivity beyond orbit |
+
+### Hyper4D vs Field — Honest Assessment
+
+**Where Hyper4D wins:**
+- ✅ 9 shapes (more than most free web visualizers)
+- ✅ 3 projection modes (most offer only 1-2)
+- ✅ Full 6-plane rotation with sliders AND drag
+- ✅ Interactive tutorial, guided tour, learn modules (best-in-class education stack)
+- ✅ Cross-section with MRI animation (unique feature)
+- ✅ Shape morphing transitions
+- ✅ Immersive / meditation mode
+- ✅ Mobile responsive bottom sheet
+- ✅ Ambient audio + shader effects
+- ✅ Accessibility: ARIA, reduced motion, skip-links
+
+**Where competitors win:**
+- ❌ Pardesco has curved stereographic edges (ours are straight lines)
+- ❌ Pardesco has 1,700 polytopes vs our 9
+- ❌ 4D Toys has physics simulation (fundamentally different product)
+- ❌ No 120-cell (too many vertices for real-time)
+- ❌ No export (OBJ, STL, screenshot-only)
+
+### Verdict
+Hyper4D is the **most feature-complete free, open-source 4D web visualizer** available. The education stack (tutorial → tour → learn) is unmatched. Main gap is polytope count, which is an ongoing content problem, not an architecture problem.
+
+---
+
+## Pass 9 Changes Implemented
+
+### 1. Visual Refinement
+- **Typography**: Added `-webkit-font-smoothing: antialiased`, `text-rendering: optimizeLegibility`, tighter letter-spacing on brand text
+- **Controls panel**: Reduced from 300px → 290px, refined `backdrop-filter: blur(16px)`, smoother cubic-bezier transitions, subtler borders (`rgba 0.06` instead of `0.08`)
+- **Shape buttons**: Refined hover/active states with subtle box-shadow glow, added `font-weight: 600` to active state
+- **Section headers**: Reduced to 10px font, increased letter-spacing to 1.2px for cleaner hierarchy
+- **Info panel**: Added entry animation (`infoPanelIn`), refined box-shadow to `0 8px 32px`, border-radius to 14px
+
+### 2. Onboarding / Landing Experience (Complete Rewrite)
+- **Cinematic 3-phase system**: `intro → reveal → done` with CSS state machine
+- **Radial vignette**: Lets the tesseract show through while darkening edges
+- **Brand text**: `clamp(2.8rem, 8vw, 5rem)`, weight 800, 3-color gradient shimmer
+- **Interaction CTA**: Pill-shaped hint with uppercase tracking: "Drag to orbit · Shift-drag for 4D rotation"
+- **Corner accents**: Subtle L-shaped borders in corners for cinematic framing
+- **Timing**: 0.8s intro → reveal with content fade-up → 2.4s hold → 1.2s fade-out
+
+### 3. Responsive Check (375px → 1440px)
+- **375px (iPhone SE)**: Controls bottom-sheet works, info panel repositioned to `bottom: 80px` with `max-height: 35vh`
+- **768px (iPad)**: Controls expand properly, tutorial card centers, tour card full-width
+- **1024px**: No layout breaks, controls sidebar fits, info panel has room
+- **1440px**: Plenty of viewport space, all elements positioned correctly
+- Added missing mobile rules to InfoPanel.css
+
+### 4. Edge Polish
+- **Loading state**: Complete rewrite with branded mini-tesseract SVG spinner, gradient brand text, proper `role="status"`
+- **All modals**: Added `animation: overlayFadeIn 0.25s` to help, tutorial, learn, comparison overlays
+- **Tutorial card**: Added `tutCardIn` scale+translate animation
+- **Help modal**: Added `helpModalIn` animation, `width: 92vw` for mobile safety
+- **Immersive mode**: Added `.controls` and `.tutorial-restart-btn` to hide list
+- **`<noscript>`**: Branded fallback for JS-disabled browsers
+- **FPS counter**: Repositioned to avoid overlap with tutorial button, matched styling
+
+### 5. SEO + Sharing
+- **Meta tags**: Updated all OG/Twitter URLs from netlify → `psjamesp.github.io/hyper4d/`
+- **Meta description**: Rewritten with keywords: "tesseracts, 24-cells, 9 polytopes, 6 hyperplanes, cross-sections"
+- **Title**: Cleaned to "Hyper4D — Interactive 4D Geometry Visualizer" (em-dash, no emoji in title tag)
+- **Favicon**: Custom SVG tesseract wireframe replacing default vite.svg
+- **OG image**: Custom SVG with tesseract wireframe, gradient brand text, corner accents
+- **Canonical URL**: Updated to GitHub Pages
+- **README**: Complete rewrite — concise, scannable, with shape table, controls table, tech stack table, no placeholder images
+
+### 6. Performance Notes
+- Loading state timer reduced from 1000ms → 800ms (faster perceived startup)
+- No new JS bundles added — all changes are CSS/HTML/content
+- Removed unused `vite.svg` from public/
+- All animations use `transform`/`opacity` only (GPU-composited, no layout thrash)
+- `backdrop-filter` + `-webkit-backdrop-filter` for Safari compatibility
+
+---
+
 # **PASS 6: CRITICAL USER TESTING SIMULATION** 🧪
 
 ## 5-Persona User Testing Results
