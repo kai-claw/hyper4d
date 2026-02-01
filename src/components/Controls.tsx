@@ -6,8 +6,9 @@ import type { ProjectionMode } from '../store/useStore';
 import { SHAPE_CATALOG } from '../engine/shapes4d';
 import type { ShapeKey } from '../engine/shapes4d';
 import { captureCanvasScreenshot, generateShareURL } from '../utils/screenshot';
-import { ThemeSelector, ThemeQuickSelector } from './ThemeSelector';
+import { ThemeQuickSelector } from './ThemeSelector';
 import { useCameraAnimations } from './CameraController';
+import { announceToScreenReader } from '../utils/accessibility';
 import './Controls.css';
 
 const ROTATION_PLANES = [
@@ -32,10 +33,8 @@ export function Controls() {
 
   // Announce shape changes to screen readers
   useEffect(() => {
-    import('../utils/accessibility').then(({ announceToScreenReader }) => {
-      const shape = SHAPE_CATALOG[store.activeShape];
-      announceToScreenReader(`Selected ${shape.label} shape`, 'polite');
-    });
+    const shape = SHAPE_CATALOG[store.activeShape];
+    announceToScreenReader(`Selected ${shape.label} shape`, 'polite');
   }, [store.activeShape]);
 
   const handleScreenshot = () => {
@@ -49,10 +48,8 @@ export function Controls() {
     const url = generateShareURL(store);
     try {
       await navigator.clipboard.writeText(url);
-      console.log('Share URL copied to clipboard');
-      // Could add toast notification here
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      // Clipboard success — could add toast notification
+    } catch {
       prompt('Copy this URL to share:', url);
     }
   };

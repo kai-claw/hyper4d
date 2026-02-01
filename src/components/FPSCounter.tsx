@@ -1,8 +1,9 @@
 /**
  * Performance monitoring FPS counter
+ * Uses requestAnimationFrame instead of R3F useFrame since
+ * this component renders OUTSIDE the Canvas context.
  */
-import { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useState, useEffect } from 'react';
 
 interface FPSCounterProps {
   visible: boolean;
@@ -12,39 +13,33 @@ export function FPSCounter({ visible }: FPSCounterProps) {
   const [fps, setFPS] = useState(60);
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());
-  const times = useRef<number[]>([]);
+  const rafId = useRef<number>(0);
 
-  useFrame(() => {
+  useEffect(() => {
     if (!visible) return;
 
-    frameCount.current++;
-    const now = performance.now();
-    
-    // Sample FPS every 60 frames or every second, whichever comes first
-    if (frameCount.current >= 60 || now - lastTime.current >= 1000) {
-      times.current.push(now);
-      
-      // Keep only last 5 measurements for smoothing
-      if (times.current.length > 5) {
-        times.current.shift();
+    const tick = () => {
+      frameCount.current++;
+      const now = performance.now();
+
+      if (now - lastTime.current >= 1000) {
+        const elapsed = now - lastTime.current;
+        setFPS(Math.round((frameCount.current / elapsed) * 1000));
+        frameCount.current = 0;
+        lastTime.current = now;
       }
-      
-      // Calculate average FPS from recent measurements
-      if (times.current.length >= 2) {
-        const avgTime = (times.current[times.current.length - 1] - times.current[0]) / (times.current.length - 1);
-        const avgFPS = 1000 / avgTime * frameCount.current / times.current.length;
-        setFPS(Math.round(avgFPS));
-      }
-      
-      frameCount.current = 0;
-      lastTime.current = now;
-    }
-  });
+
+      rafId.current = requestAnimationFrame(tick);
+    };
+
+    rafId.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId.current);
+  }, [visible]);
 
   if (!visible) return null;
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: '10px',
@@ -71,7 +66,7 @@ export function FPSToggle() {
 
   return (
     <>
-      <FPSCounter visible={showFPS} />
+      {showFPS && <FPSCounter visible={showFPS} />}
       <button
         onClick={() => setShowFPS(!showFPS)}
         style={{

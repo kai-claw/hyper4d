@@ -28,15 +28,17 @@ export function CameraController({ orbitControlsRef }: CameraControllerProps) {
   const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
   
   // Shape-specific camera positions for smooth transitions
-  const shapeViewpoints = {
+  // Keys must match ShapeKey from shapes4d.ts
+  const shapeViewpoints: Record<string, { position: [number, number, number]; lookAt: [number, number, number] }> = {
     tesseract: { position: [3, 2, 5], lookAt: [0, 0, 0] },
-    cell5: { position: [4, 3, 4], lookAt: [0, 0, 0] },
-    cell16: { position: [3, 4, 4], lookAt: [0, 0, 0] },
-    cell24: { position: [5, 3, 4], lookAt: [0, 0, 0] },
-    cell120: { position: [6, 4, 5], lookAt: [0, 0, 0] },
-    cell600: { position: [7, 5, 6], lookAt: [0, 0, 0] },
-    sphere4d: { position: [4, 2, 6], lookAt: [0, 0, 0] },
+    '5cell': { position: [4, 3, 4], lookAt: [0, 0, 0] },
+    '16cell': { position: [3, 4, 4], lookAt: [0, 0, 0] },
+    '24cell': { position: [5, 3, 4], lookAt: [0, 0, 0] },
+    '600cell': { position: [7, 5, 6], lookAt: [0, 0, 0] },
+    sphere: { position: [4, 2, 6], lookAt: [0, 0, 0] },
     torus: { position: [3, 5, 4], lookAt: [0, 0, 0] },
+    'duoprism33': { position: [4, 3, 5], lookAt: [0, 0, 0] },
+    'duoprism44': { position: [4, 3, 5], lookAt: [0, 0, 0] },
   };
   
   // Smooth shape transition animation

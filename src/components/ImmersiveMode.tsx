@@ -15,6 +15,10 @@ export function ImmersiveMode() {
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle keys when typing in inputs
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
       if (e.key === 'Escape' && isImmersiveMode) {
         e.preventDefault();
         exitImmersive();
@@ -33,9 +37,9 @@ export function ImmersiveMode() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isImmersiveMode, exitImmersive, toggleImmersiveMode, setCameraMode]);
   
-  // Click to exit
+  // Click to exit (only on the overlay itself, not child controls)
   const handleClick = useCallback((e: React.MouseEvent) => {
-    if (isImmersiveMode) {
+    if (isImmersiveMode && e.target === e.currentTarget) {
       e.preventDefault();
       exitImmersive();
     }

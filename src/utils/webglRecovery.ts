@@ -17,7 +17,6 @@ export function setupWebGLRecovery(canvas: HTMLCanvasElement, handlers: WebGLRec
   };
 
   const handleContextRestored = () => {
-    console.log('WebGL context restored');
     announceToScreenReader('Graphics context restored successfully', 'assertive');
     handlers.onContextRestored();
   };

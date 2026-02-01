@@ -22,15 +22,17 @@ export class AmbientAudio {
   private animationFrame: number | null = null;
   
   // Base frequencies for different shapes (Hz)
-  private readonly shapeFrequencies: Record<ShapeKey, number> = {
+  // Keys MUST match ShapeKey from shapes4d.ts
+  private readonly shapeFrequencies: Record<string, number> = {
     tesseract: 55.0,      // A1 - fundamental, grounding
-    cell5: 82.4,          // E2 - bright, simple
-    cell16: 73.4,         // D2 - crystalline  
-    cell24: 98.0,         // G2 - complex harmony
-    cell120: 110.0,       // A2 - rich overtones
-    cell600: 146.8,       // D3 - highest complexity
-    sphere4d: 65.4,       // C2 - pure, infinite
+    '5cell': 82.4,        // E2 - bright, simple
+    '16cell': 73.4,       // D2 - crystalline  
+    '24cell': 98.0,       // G2 - complex harmony
+    '600cell': 146.8,     // D3 - highest complexity
+    sphere: 65.4,         // C2 - pure, infinite
     torus: 87.3,          // F2 - flowing, periodic
+    'duoprism33': 92.5,   // F#2 - geometric
+    'duoprism44': 110.0,  // A2 - structured
   };
   
   async initialize(): Promise<void> {
@@ -94,7 +96,7 @@ export class AmbientAudio {
       this.isInitialized = true;
       this.startAudioLoop();
       
-      console.log('🎵 Ambient audio system initialized');
+      // Audio system ready
     } catch (error) {
       console.warn('Failed to initialize audio:', error);
     }
@@ -168,11 +170,11 @@ export class AmbientAudio {
     
     if (this.audioNodes) {
       const { context, baseOscillator } = this.audioNodes;
-      const newFreq = this.shapeFrequencies[shape];
+      const newFreq = this.shapeFrequencies[shape] || 55.0; // fallback
       
       // Smooth transition to new frequency
       baseOscillator.frequency.exponentialRampToValueAtTime(
-        newFreq,
+        Math.max(20, newFreq),
         context.currentTime + 1.0
       );
     }

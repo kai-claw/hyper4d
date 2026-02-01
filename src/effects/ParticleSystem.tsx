@@ -1,6 +1,6 @@
 // Particle effects for 4D visualization - subtle and aesthetic
 
-import React, { useRef, useMemo, useCallback } from 'react';
+import React, { useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useStore } from '../store/useStore';
@@ -14,10 +14,15 @@ interface ParticleData {
   color: THREE.Color;
 }
 
+export interface ParticleSystemHandle {
+  triggerCrossSectionBurst: (position: THREE.Vector3) => void;
+  addTrailParticle: (position: THREE.Vector3, speed: number) => void;
+}
+
 const MAX_PARTICLES = 200;
 const PARTICLE_LIFETIME = 2.0; // seconds
 
-export function ParticleSystem() {
+export const ParticleSystem = forwardRef<ParticleSystemHandle>(function ParticleSystem(_props, ref) {
   const { colorTheme, enableShaderEffects } = useStore();
   const particlesRef = useRef<THREE.Points>(null);
   const particleData = useRef<ParticleData[]>([]);
@@ -206,11 +211,11 @@ export function ParticleSystem() {
     }
   });
   
-  // Expose particle functions to parent components via ref
-  React.useImperativeHandle(useRef(), () => ({
+  // Expose particle functions to parent components via forwarded ref
+  useImperativeHandle(ref, () => ({
     triggerCrossSectionBurst,
     addTrailParticle,
-  }));
+  }), [triggerCrossSectionBurst, addTrailParticle]);
   
   if (!enableShaderEffects) {
     return null;
@@ -219,12 +224,9 @@ export function ParticleSystem() {
   return (
     <points ref={particlesRef} geometry={geometry} material={material} />
   );
-}
+});
 
-// Export the particle system functions for use in Scene4D
-// (ParticleSystem already exported above as default component)
-
-// Add to window object for Scene4D to access
+// Window type augmentation for Scene4D access (no longer needed with forwardRef)
 declare global {
   interface Window {
     __hyper4d_particles?: {

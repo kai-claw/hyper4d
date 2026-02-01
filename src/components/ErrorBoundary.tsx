@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (canvas) {
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl && gl.isContextLost()) {
-        console.log('WebGL context lost, attempting recovery...');
+        // WebGL context lost — force reload
         window.location.reload();
       }
     }
@@ -149,15 +149,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
 // Hook version for functional components
 export function useErrorHandler() {
-  return (error: Error, errorInfo?: ErrorInfo) => {
-    console.error('Hyper4D Error:', error, errorInfo);
-    
+  return (error: Error) => {
     // Check if it's a WebGL context loss
     if (error.message?.includes('WebGL') || error.message?.includes('context')) {
-      // Attempt WebGL recovery
-      import('../utils/webglRecovery').then(({ handleWebGLContextLoss }) => {
-        handleWebGLContextLoss();
-      });
+      // WebGL context loss — reload is the safest recovery
+      window.location.reload();
     }
   };
 }

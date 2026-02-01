@@ -51,10 +51,8 @@ export function ContextMenu({ x, y, visible, onClose }: ContextMenuProps) {
     const url = generateShareURL(store);
     try {
       await navigator.clipboard.writeText(url);
-      // Could add a toast notification here
-      console.log('Share URL copied to clipboard');
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      // Clipboard success
+    } catch {
       // Fallback: show URL in prompt
       prompt('Copy this URL to share:', url);
     }

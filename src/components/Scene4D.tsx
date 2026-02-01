@@ -19,6 +19,7 @@ import {
 import { wToColorCached } from '../utils/ColorCache';
 import { HyperEdgeMaterial, HyperVertexMaterial } from '../materials/HyperShader';
 import { ParticleSystem } from '../effects/ParticleSystem';
+import type { ParticleSystemHandle } from '../effects/ParticleSystem';
 import { AmbientAudio } from '../audio/AmbientAudio';
 
 // Performance constants
@@ -57,7 +58,7 @@ export function Scene4D() {
 
   const rotationRef = useRef({ ...rotation });
   const groupRef = useRef<THREE.Group>(null);
-  const particleSystemRef = useRef<any>(null);
+  const particleSystemRef = useRef<ParticleSystemHandle>(null);
   const audioSystemRef = useRef<AmbientAudio | null>(null);
   const shapeTransitionRef = useRef({ progress: 1, fromShape: null as any, toShape: null as any });
   const lastActiveShapeRef = useRef(activeShape);
@@ -75,6 +76,28 @@ export function Scene4D() {
   // Shader materials
   const edgeMaterialRef = useRef<HyperEdgeMaterial | null>(null);
   const vertexMaterialRef = useRef<HyperVertexMaterial | null>(null);
+
+  // Cleanup all resources on unmount
+  useEffect(() => {
+    return () => {
+      // Dispose shader materials
+      if (edgeMaterialRef.current) {
+        edgeMaterialRef.current.dispose();
+        edgeMaterialRef.current = null;
+      }
+      if (vertexMaterialRef.current) {
+        vertexMaterialRef.current.dispose();
+        vertexMaterialRef.current = null;
+      }
+      // Dispose line geometry
+      if (prevLinesGeoRef.current) {
+        prevLinesGeoRef.current.dispose();
+        prevLinesGeoRef.current = null;
+      }
+      // Clear rotation cache
+      _rotationMatrixCache.clear();
+    };
+  }, []);
 
   // Initialize audio system
   useEffect(() => {
@@ -471,8 +494,13 @@ export function Scene4D() {
     }
   }, [enableShaderEffects, shape.vertices, project]);
 
-  // Create LineSegments geometry
+  // Create LineSegments geometry — dispose old geometry on shape change
+  const prevLinesGeoRef = useRef<THREE.BufferGeometry | null>(null);
   const linesGeo = useMemo(() => {
+    // Dispose previous geometry to prevent memory leaks
+    if (prevLinesGeoRef.current) {
+      prevLinesGeoRef.current.dispose();
+    }
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(shape.edges.length * 2 * 3);
     const colors = new Float32Array(shape.edges.length * 2 * 3);
@@ -485,16 +513,31 @@ export function Scene4D() {
     }
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    prevLinesGeoRef.current = geo;
     return geo;
   }, [shape.edges.length, activeShape, shape.color]);
 
-  // Initialize shader materials
-  if (enableShaderEffects && !edgeMaterialRef.current) {
-    edgeMaterialRef.current = new HyperEdgeMaterial(colorTheme);
-  }
-  if (enableShaderEffects && !vertexMaterialRef.current) {
-    vertexMaterialRef.current = new HyperVertexMaterial(colorTheme);
-  }
+  // Initialize or dispose shader materials based on toggle
+  useEffect(() => {
+    if (enableShaderEffects) {
+      if (!edgeMaterialRef.current) {
+        edgeMaterialRef.current = new HyperEdgeMaterial(colorTheme);
+      }
+      if (!vertexMaterialRef.current) {
+        vertexMaterialRef.current = new HyperVertexMaterial(colorTheme);
+      }
+    } else {
+      // Dispose materials when effects are disabled to free GPU memory
+      if (edgeMaterialRef.current) {
+        edgeMaterialRef.current.dispose();
+        edgeMaterialRef.current = null;
+      }
+      if (vertexMaterialRef.current) {
+        vertexMaterialRef.current.dispose();
+        vertexMaterialRef.current = null;
+      }
+    }
+  }, [enableShaderEffects, colorTheme]);
 
   return (
     <group ref={groupRef}>

@@ -76,8 +76,10 @@ export function TourMode() {
     // Apply step settings
     setActiveShape(step.shape);
     
-    // Enable auto-rotation and set speeds
-    toggleAutoRotation();
+    // Ensure auto-rotation is ON (don't blindly toggle)
+    if (!useStore.getState().isAutoRotating) {
+      toggleAutoRotation();
+    }
     Object.entries(step.autoRotate).forEach(([plane, value]) => {
       setAutoRotation(plane as any, value);
     });
