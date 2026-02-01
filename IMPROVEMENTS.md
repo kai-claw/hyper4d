@@ -158,3 +158,143 @@
 ---
 
 *Next: Implementing Phase 1 critical fixes...*
+
+---
+
+# **PASS 6: CRITICAL USER TESTING SIMULATION** 🧪
+
+## 5-Persona User Testing Results
+
+### **PERSONA 1: 14-Year-Old Math Student** 👨‍🎓
+
+**CRITICAL FINDINGS:**
+- ❌ **"Rotation plane XW" is TERRIFYING jargon** - Teenager would immediately feel stupid
+- ❌ **No explanation of dimensions** - What do X, Y, Z, W even mean?
+- ❌ **Tutorial assumes too much** - Uses terms like "4D space" without building up
+- ❌ **Shape names are intimidating** - "16-Cell" sounds like prison, not fun
+- ❌ **No "cool factor"** - Needs more "wow" moments and less math lecture
+
+**FIXES NEEDED:**
+- Replace "XW rotation" with "Twist into the 4th dimension"
+- Add dimension explanations: "X = left/right, Y = up/down, Z = forward/back, W = ?"
+- Make tutorial more conversational and encouraging
+- Give shapes fun names: "Hypercube" instead of "Tesseract"
+
+### **PERSONA 2: Math Professor (Polytope Expert)** 🔬
+
+**MATHEMATICAL ACCURACY AUDIT:**
+
+**CRITICAL ERRORS FOUND:**
+- ❌ **24-Cell has WRONG vertex count** - Implementation shows ~32 vertices, should be exactly 24
+- ❌ **600-Cell is fake** - Only 32 vertices shown, real has 120 vertices
+- ❌ **Missing Schläfli symbols** - {3,3,5} notation not shown anywhere
+- ❌ **Vertex/edge counts unverified** - No validation that displayed counts match theory
+
+**MATHEMATICAL INTEGRITY SCORE: 3/10** - Would not pass academic review
+
+**VERIFICATION NEEDED:**
+- Tesseract: 16 vertices, 32 edges, 24 faces, 8 cells ✅
+- 16-cell: 8 vertices, 24 edges, 32 faces, 16 cells ❓
+- 24-cell: 24 vertices, 96 edges, 96 faces, 24 cells ❌
+- 600-cell: 120 vertices, 720 edges, 1200 faces, 600 cells ❌
+
+### **PERSONA 3: Web Developer (Hiring Manager)** 💻
+
+**CODE QUALITY ASSESSMENT:**
+
+**AMATEUR RED FLAGS:**
+- ❌ **Magic numbers everywhere** - `Math.PI * 2 / 3` should be constants
+- ❌ **No error boundaries** - Three.js crashes would break entire app
+- ❌ **CSS organization is messy** - Mix of inline styles and CSS files
+- ❌ **No TypeScript strict mode** - Missing type safety
+- ❌ **Accessibility ignored** - Would fail WCAG audit
+
+**WOULD I HIRE THIS DEVELOPER? NO** - Shows poor software engineering practices
+
+**PROFESSIONAL STANDARDS NEEDED:**
+- Proper error handling
+- Consistent code style
+- Better type safety
+- Accessibility compliance
+- Performance optimization
+
+### **PERSONA 4: Mobile User (iPhone SE - 375px)** 📱
+
+**MOBILE EXPERIENCE AUDIT:**
+
+**CRITICAL MOBILE FAILURES:**
+- ❌ **Controls panel covers 70% of screen** - Can barely see the 3D viewport
+- ❌ **Font too small** - 12px text fails accessibility (minimum 16px)
+- ❌ **Sliders impossible to use** - Need 44px touch targets minimum
+- ❌ **Tutorial modal doesn't fit** - Gets cut off on small screens
+- ❌ **No landscape mode** - Broken in horizontal orientation
+
+**MOBILE USABILITY SCORE: 2/10** - Essentially unusable on phones
+
+**FIXES REQUIRED:**
+- Redesign as mobile-first bottom sheet
+- Larger touch targets (44px minimum)
+- Better text sizes (16px+)
+- Landscape mode support
+
+### **PERSONA 5: Accessibility User (Keyboard + Screen Reader)** ♿
+
+**ACCESSIBILITY COMPLIANCE AUDIT:**
+
+**CRITICAL A11Y VIOLATIONS:**
+- ❌ **Canvas is invisible to screen readers** - No aria-label or live regions
+- ❌ **Keyboard navigation broken** - Can't tab through controls logically
+- ❌ **No shape change announcements** - Screen reader users don't know what happened
+- ❌ **Sliders have poor labels** - "XW rotation" means nothing without context
+- ❌ **Focus management missing** - Modals don't trap focus
+- ❌ **No skip links** - Can't bypass controls to main content
+
+**WCAG COMPLIANCE SCORE: 1/10** - Would face legal issues
+
+**ACCESSIBILITY FIXES:**
+- Add live regions for shape changes
+- Proper ARIA labels on all controls
+- Keyboard shortcuts documentation
+- Focus management in modals
+- Screen reader friendly descriptions
+
+---
+
+## CRITICAL FIXES TO IMPLEMENT
+
+### **🔥 IMMEDIATE (Fix Before Deploy)**
+1. **Mathematical accuracy** - Fix 24-cell and 600-cell vertex counts
+2. **Mobile responsiveness** - Redesign controls for mobile
+3. **Accessibility basics** - Add ARIA labels and keyboard navigation
+4. **Tutorial rewrite** - Make it welcoming for beginners
+5. **Error boundaries** - Prevent Three.js crashes from breaking app
+
+### **📱 MOBILE CRITICAL**
+- Bottom sheet design for controls
+- 44px minimum touch targets
+- 16px minimum font size
+- Landscape mode support
+- Viewport meta tag fixes
+
+### **♿ ACCESSIBILITY CRITICAL**
+- Canvas description and live updates
+- Proper focus management
+- Keyboard navigation fixes
+- Screen reader announcements
+- Skip links and landmarks
+
+### **🧠 UX CRITICAL**
+- Beginner-friendly tutorial
+- Progressive disclosure of features
+- Better onboarding flow
+- Remove intimidating jargon
+- Add "wow" moments
+
+---
+
+## IMPLEMENTATION PLAN
+
+**STEP 1: Fix Mathematical Errors** (Credibility)
+**STEP 2: Mobile & Accessibility** (Compliance)  
+**STEP 3: Beginner Experience** (Adoption)
+**STEP 4: Polish & Performance** (Excellence)

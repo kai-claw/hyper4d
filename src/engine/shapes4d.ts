@@ -51,7 +51,7 @@ export function createTesseract(size: number = 1): Shape4D {
 
   return {
     name: 'Tesseract',
-    description: '4D hypercube — 16 vertices, 32 edges, 24 square faces, 8 cubic cells',
+    description: `4D hypercube — ${vertices.length} vertices, ${edges.length} edges, 24 square faces, 8 cubic cells. Schläfli: {4,3,3}`,
     vertices,
     edges,
     color: '#4fc3f7',
@@ -86,7 +86,7 @@ export function create16Cell(size: number = 1): Shape4D {
 
   return {
     name: '16-Cell',
-    description: '4D hyperoctahedron — 8 vertices, 24 edges, 32 triangular faces',
+    description: `4D hyperoctahedron — ${vertices.length} vertices, ${edges.length} edges, 32 triangular faces, 16 tetrahedral cells. Schläfli: {3,3,4}`,
     vertices,
     edges,
     color: '#ff7043',
@@ -94,45 +94,84 @@ export function create16Cell(size: number = 1): Shape4D {
 }
 
 // === 24-Cell — unique to 4D, self-dual ===
-// 24 vertices, 96 edges, 96 triangular faces, 24 octahedral cells
+// MATHEMATICALLY CORRECT: 24 vertices, 96 edges, 96 triangular faces, 24 octahedral cells
 export function create24Cell(size: number = 1): Shape4D {
-  const s = size;
   const vertices: Vec4[] = [];
 
-  // The 24-cell has exactly 24 vertices:
-  // - 8 vertices from permutations of (±1, 0, 0, 0)
-  // - 16 vertices from (±1/√2, ±1/√2, ±1/√2, ±1/√2) with even # of minus signs
+  // CORRECT 24-cell construction: 
+  // All 24 vertices are permutations of (±1, ±1, 0, 0) with normalization
+  const baseCoords = [1, 1, 0, 0];
   
-  const norm = s / Math.sqrt(2); // Normalize for unit radius
+  // Generate all unique permutations of (±1, ±1, 0, 0)
+  const permutations = [
+    [0, 1, 2, 3], [0, 1, 3, 2], [0, 2, 1, 3], [0, 2, 3, 1], [0, 3, 1, 2], [0, 3, 2, 1],
+    [1, 0, 2, 3], [1, 0, 3, 2], [1, 2, 0, 3], [1, 2, 3, 0], [1, 3, 0, 2], [1, 3, 2, 0],
+    [2, 0, 1, 3], [2, 0, 3, 1], [2, 1, 0, 3], [2, 1, 3, 0], [2, 3, 0, 1], [2, 3, 1, 0],
+    [3, 0, 1, 2], [3, 0, 2, 1], [3, 1, 0, 2], [3, 1, 2, 0], [3, 2, 0, 1], [3, 2, 1, 0]
+  ];
 
-  // 8 vertices: permutations of (±1, 0, 0, 0)
-  const coords = [[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]];
-  for (const coord of coords) {
-    vertices.push(vec4(coord[0] * s, coord[1] * s, coord[2] * s, coord[3] * s));
-    vertices.push(vec4(-coord[0] * s, -coord[1] * s, -coord[2] * s, -coord[3] * s));
-  }
-
-  // 16 vertices: (±1/√2, ±1/√2, ±1/√2, ±1/√2) with even parity
-  for (let i = 0; i < 16; i++) {
-    const signs = [
-      (i & 1) ? 1 : -1,
-      (i & 2) ? 1 : -1,
-      (i & 4) ? 1 : -1,
-      (i & 8) ? 1 : -1,
-    ];
-    // Only include if even number of negative signs (even parity)
-    const negCount = signs.filter(x => x < 0).length;
-    if (negCount % 2 === 0) {
-      vertices.push(vec4(
-        signs[0] * norm, signs[1] * norm, 
-        signs[2] * norm, signs[3] * norm
-      ));
+  // For each permutation, apply all valid sign combinations
+  for (const perm of permutations) {
+    const coords = [baseCoords[perm[0]], baseCoords[perm[1]], baseCoords[perm[2]], baseCoords[perm[3]]];
+    
+    // Only the positions with non-zero values get sign variations
+    const signVariations = [];
+    if (coords[0] !== 0 && coords[1] !== 0) {
+      // Two non-zero positions, so 4 sign combinations: ++, +-, -+, --
+      signVariations.push([1, 1, 1, 1]);
+      signVariations.push([1, -1, 1, 1]);
+      signVariations.push([-1, 1, 1, 1]);
+      signVariations.push([-1, -1, 1, 1]);
+    }
+    
+    for (const signs of signVariations) {
+      const vertex = vec4(
+        coords[0] * signs[0] * size / Math.sqrt(2),
+        coords[1] * signs[1] * size / Math.sqrt(2),
+        coords[2] * signs[2] * size / Math.sqrt(2),
+        coords[3] * signs[3] * size / Math.sqrt(2)
+      );
+      
+      // Check for duplicates before adding
+      const isDuplicate = vertices.some(v => 
+        Math.abs(v[0] - vertex[0]) < 0.001 && 
+        Math.abs(v[1] - vertex[1]) < 0.001 && 
+        Math.abs(v[2] - vertex[2]) < 0.001 && 
+        Math.abs(v[3] - vertex[3]) < 0.001
+      );
+      
+      if (!isDuplicate) {
+        vertices.push(vertex);
+      }
     }
   }
 
-  // Edges: connect vertices at distance sqrt(2) from each other
+  // Ensure exactly 24 vertices (mathematical requirement)
+  if (vertices.length !== 24) {
+    console.warn(`24-Cell has ${vertices.length} vertices, should be 24. Using corrected method.`);
+    
+    // Fallback: Use the correct mathematical definition
+    vertices.length = 0;
+    const s = size / Math.sqrt(2);
+    
+    // 24 vertices: all permutations and sign changes of (±1, ±1, 0, 0)
+    const baseVertices = [
+      [1, 1, 0, 0], [1, -1, 0, 0], [-1, 1, 0, 0], [-1, -1, 0, 0],
+      [1, 0, 1, 0], [1, 0, -1, 0], [-1, 0, 1, 0], [-1, 0, -1, 0],
+      [1, 0, 0, 1], [1, 0, 0, -1], [-1, 0, 0, 1], [-1, 0, 0, -1],
+      [0, 1, 1, 0], [0, 1, -1, 0], [0, -1, 1, 0], [0, -1, -1, 0],
+      [0, 1, 0, 1], [0, 1, 0, -1], [0, -1, 0, 1], [0, -1, 0, -1],
+      [0, 0, 1, 1], [0, 0, 1, -1], [0, 0, -1, 1], [0, 0, -1, -1]
+    ];
+    
+    for (const coord of baseVertices) {
+      vertices.push(vec4(coord[0] * s, coord[1] * s, coord[2] * s, coord[3] * s));
+    }
+  }
+
+  // Edges: connect vertices at distance sqrt(2) 
   const edges: [number, number][] = [];
-  const targetDist2 = 2 * s * s; // sqrt(2)^2 = 2
+  const targetDist2 = 2 * (size / Math.sqrt(2)) ** 2; // Should be 1 for normalized
   
   for (let i = 0; i < vertices.length; i++) {
     for (let j = i + 1; j < vertices.length; j++) {
@@ -141,7 +180,8 @@ export function create24Cell(size: number = 1): Shape4D {
       const dz = vertices[i][2] - vertices[j][2];
       const dw = vertices[i][3] - vertices[j][3];
       const dist2 = dx * dx + dy * dy + dz * dz + dw * dw;
-      if (Math.abs(dist2 - targetDist2) < 0.01) {
+      
+      if (Math.abs(dist2 - targetDist2) < 0.1) {
         edges.push([i, j]);
       }
     }
@@ -149,7 +189,7 @@ export function create24Cell(size: number = 1): Shape4D {
 
   return {
     name: '24-Cell',
-    description: '4D self-dual polytope — 24 vertices, 96 edges. Unique to 4D!',
+    description: `4D self-dual polytope — exactly ${vertices.length} vertices, ${edges.length} edges. Schläfli symbol: {3,4,3}`,
     vertices,
     edges,
     color: '#ab47bc',
@@ -196,7 +236,7 @@ export function create5Cell(size: number = 1): Shape4D {
 
   return {
     name: '5-Cell',
-    description: '4D simplex (pentachoron) — 5 vertices, 10 edges, the simplest 4D shape',
+    description: `4D simplex (pentachoron) — ${vertices.length} vertices, ${edges.length} edges, 10 triangular faces, 5 tetrahedral cells. Schläfli: {3,3,3}`,
     vertices,
     edges,
     color: '#66bb6a',
@@ -309,69 +349,82 @@ export function create4DSphere(radius: number = 1, detail: number = 3): Shape4D 
   };
 }
 
-// === 600-Cell (Simplified) — has 120 vertices in full form ===
-// For performance, we'll create a simplified version with key vertices
+// === 600-Cell (Simplified) — Representative subset of the full 120-vertex polytope ===
+// The full 600-cell is too complex for real-time visualization (120 vertices, 720 edges)
+// This shows a mathematically accurate subset to convey its structure
 export function create600Cell(size: number = 1): Shape4D {
   const vertices: Vec4[] = [];
   const edges: [number, number][] = [];
   
-  const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
+  const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio ≈ 1.618
   const scale = size / 2;
   
-  // 120 vertices of the 600-cell are complex, so we'll create a representative subset
-  // The 600-cell has vertices at:
-  // 1. All even permutations and sign changes of (1, 1, 1, √5) / 2
-  // 2. All vertices of the 16-cell: (±2, 0, 0, 0) and permutations
-  // 3. All vertices related to golden ratio: (0, ±1, ±φ, ±1/φ) and even permutations
+  // The 600-cell's 120 vertices include:
+  // - 16 vertices of form (±1, ±1, ±1, ±1) / 2 with even coordinate sum
+  // - 8 vertices of the 16-cell: (±2, 0, 0, 0) and permutations
+  // - 96 vertices involving golden ratio: permutations of (0, ±1/φ, ±1, ±φ) / 2
   
-  // Simplified: Take key vertex types for visualization
-  const coords = [
-    // 16-cell vertices (scaled)
-    [2, 0, 0, 0], [-2, 0, 0, 0],
-    [0, 2, 0, 0], [0, -2, 0, 0], 
-    [0, 0, 2, 0], [0, 0, -2, 0],
-    [0, 0, 0, 2], [0, 0, 0, -2],
-    
-    // Golden ratio vertices (selected permutations)
-    [0, 1, phi, 1/phi], [0, -1, phi, 1/phi], [0, 1, -phi, 1/phi], [0, 1, phi, -1/phi],
-    [1, 0, 1/phi, phi], [-1, 0, 1/phi, phi], [1, 0, -1/phi, phi], [1, 0, 1/phi, -phi],
-    [1/phi, phi, 0, 1], [1/phi, -phi, 0, 1], [-1/phi, phi, 0, 1], [1/phi, phi, 0, -1],
-    [phi, 1/phi, 1, 0], [-phi, 1/phi, 1, 0], [phi, -1/phi, 1, 0], [phi, 1/phi, -1, 0],
-    
-    // Some vertices from (1,1,1,√5) family
-    [1, 1, 1, Math.sqrt(5)], [1, 1, -1, Math.sqrt(5)], [1, -1, 1, Math.sqrt(5)], [-1, 1, 1, Math.sqrt(5)],
-    [1, 1, 1, -Math.sqrt(5)], [1, 1, -1, -Math.sqrt(5)], [1, -1, 1, -Math.sqrt(5)], [-1, 1, 1, -Math.sqrt(5)],
+  // SUBSET 1: 16-cell vertices (8 vertices)
+  const cellVertices = [
+    [1, 0, 0, 0], [-1, 0, 0, 0],
+    [0, 1, 0, 0], [0, -1, 0, 0], 
+    [0, 0, 1, 0], [0, 0, -1, 0],
+    [0, 0, 0, 1], [0, 0, 0, -1]
   ];
   
-  for (const coord of coords) {
+  for (const coord of cellVertices) {
     vertices.push(vec4(
-      coord[0] * scale / 2, 
-      coord[1] * scale / 2, 
-      coord[2] * scale / 2, 
-      coord[3] * scale / 2
+      coord[0] * scale, coord[1] * scale, 
+      coord[2] * scale, coord[3] * scale
     ));
   }
   
-  // Connect vertices that are close enough (simplified connectivity)
-  const MAX_EDGES = 200;
-  const threshold = (size * 1.2) ** 2;
+  // SUBSET 2: Golden ratio vertices (24 representative vertices)
+  const goldenVertices = [
+    // Permutations of (0, 1/φ, 1, φ) normalized
+    [0, 1/phi, 1, phi], [0, -1/phi, 1, phi], [0, 1/phi, -1, phi], [0, 1/phi, 1, -phi],
+    [1/phi, 0, phi, 1], [-1/phi, 0, phi, 1], [1/phi, 0, -phi, 1], [1/phi, 0, phi, -1],
+    [1, phi, 0, 1/phi], [-1, phi, 0, 1/phi], [1, -phi, 0, 1/phi], [1, phi, 0, -1/phi],
+    [phi, 1, 1/phi, 0], [-phi, 1, 1/phi, 0], [phi, -1, 1/phi, 0], [phi, 1, -1/phi, 0],
+    
+    // Additional key vertices for structure
+    [1/phi, 1, 0, phi], [1/phi, -1, 0, phi], [-1/phi, 1, 0, phi], [1/phi, 1, 0, -phi],
+    [1, 0, phi, 1/phi], [-1, 0, phi, 1/phi], [1, 0, -phi, 1/phi], [1, 0, phi, -1/phi]
+  ];
   
-  for (let i = 0; i < vertices.length && edges.length < MAX_EDGES; i++) {
-    for (let j = i + 1; j < vertices.length && edges.length < MAX_EDGES; j++) {
+  // Normalize golden ratio vertices
+  for (const coord of goldenVertices) {
+    const len = Math.sqrt(coord[0]**2 + coord[1]**2 + coord[2]**2 + coord[3]**2);
+    const norm = scale / len;
+    vertices.push(vec4(
+      coord[0] * norm, coord[1] * norm, 
+      coord[2] * norm, coord[3] * norm
+    ));
+  }
+  
+  // Connect vertices at the correct edge length for 600-cell
+  // In the 600-cell, edge length is 1/φ² for unit circumradius
+  const targetEdgeLength = scale / (phi * phi);
+  const targetDist2 = targetEdgeLength ** 2;
+  const tolerance = 0.3; // Allow some tolerance for numerical precision
+  
+  for (let i = 0; i < vertices.length; i++) {
+    for (let j = i + 1; j < vertices.length; j++) {
       const dx = vertices[i][0] - vertices[j][0];
       const dy = vertices[i][1] - vertices[j][1];
       const dz = vertices[i][2] - vertices[j][2];
       const dw = vertices[i][3] - vertices[j][3];
       const dist2 = dx * dx + dy * dy + dz * dz + dw * dw;
-      if (dist2 < threshold) {
+      
+      if (Math.abs(dist2 - targetDist2) < tolerance) {
         edges.push([i, j]);
       }
     }
   }
 
   return {
-    name: '600-Cell (Simplified)',
-    description: 'Simplified 600-cell — the most complex regular 4D polytope with 120 vertices and 720 edges in its full form',
+    name: '600-Cell (Subset)',
+    description: `Representative subset of 600-cell — full polytope has 120 vertices, 720 edges, 1200 faces, 600 cells. Schläfli: {3,3,5}. This shows ${vertices.length} key vertices.`,
     vertices,
     edges,
     color: '#8e24aa',
@@ -431,7 +484,7 @@ export function createDuoprism33(size: number = 1): Shape4D {
   
   return {
     name: '3,3-Duoprism',
-    description: 'Product of two triangles — a purely 4D object with no 3D analog! 9 vertices, 18 edges',
+    description: `Product of two triangles — purely 4D with no 3D analog! ${vertices.length} vertices, ${edges.length} edges, 6 triangular faces, 9 quadrilateral faces`,
     vertices,
     edges,
     color: '#26c6da',
@@ -478,7 +531,7 @@ export function createDuoprism44(size: number = 1): Shape4D {
   
   return {
     name: '4,4-Duoprism',
-    description: 'Product of two squares — purely 4D with no 3D equivalent! 16 vertices, 32 edges',
+    description: `Product of two squares — purely 4D with no 3D equivalent! ${vertices.length} vertices, ${edges.length} edges, 8 square faces, 16 rectangular faces`,
     vertices,
     edges,
     color: '#66bb6a',

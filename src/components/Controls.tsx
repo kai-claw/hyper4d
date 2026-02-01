@@ -1,6 +1,6 @@
 // Control panel for 4D manipulation
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import type { ProjectionMode } from '../store/useStore';
 import { SHAPE_CATALOG } from '../engine/shapes4d';
@@ -27,6 +27,14 @@ export function Controls() {
   const store = useStore();
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
+  // Announce shape changes to screen readers
+  useEffect(() => {
+    import('../utils/accessibility').then(({ announceToScreenReader }) => {
+      const shape = SHAPE_CATALOG[store.activeShape];
+      announceToScreenReader(`Selected ${shape.label} shape`, 'polite');
+    });
+  }, [store.activeShape]);
+
   const handleScreenshot = () => {
     const canvas = document.querySelector('canvas');
     if (canvas) {
@@ -47,10 +55,24 @@ export function Controls() {
   };
 
   return (
-    <div className={`controls ${isMobileExpanded ? 'expanded' : ''}`}>
+    <div 
+      className={`controls ${isMobileExpanded ? 'expanded' : ''}`}
+      role="complementary"
+      aria-label="4D shape controls"
+    >
       <div 
         className="controls-header"
         onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isMobileExpanded}
+        aria-label={`4D Controls ${isMobileExpanded ? 'expanded' : 'collapsed'}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsMobileExpanded(!isMobileExpanded);
+          }
+        }}
       >
         <h2>⚡ Hyper4D</h2>
         <button 
@@ -59,7 +81,8 @@ export function Controls() {
             e.stopPropagation();
             store.toggleHelp();
           }} 
-          title="Help"
+          aria-label="Open help and keyboard shortcuts"
+          title="Help (H)"
         >
           ?
         </button>
@@ -96,7 +119,7 @@ export function Controls() {
                 htmlFor={`rotation-${key}`}
                 className={key.includes('w') ? 'label-4d' : ''}
               >
-                {label}
+                {label} {key.includes('w') ? '(4D)' : '(3D)'}
               </label>
               <input
                 id={`rotation-${key}`}
@@ -106,15 +129,22 @@ export function Controls() {
                 step={0.01}
                 value={store.rotation[key]}
                 onChange={(e) => store.setRotation(key, parseFloat(e.target.value))}
-                aria-label={`${label} rotation: ${desc}`}
-                aria-describedby={`rotation-${key}-value`}
+                aria-label={`${label} rotation: ${desc}. Current value: ${(store.rotation[key] * 180 / Math.PI).toFixed(0)} degrees`}
+                aria-describedby={`rotation-${key}-desc`}
+                aria-valuetext={`${(store.rotation[key] * 180 / Math.PI).toFixed(0)} degrees`}
               />
               <span 
                 id={`rotation-${key}-value`}
                 className="value"
-                aria-label={`Current rotation: ${(store.rotation[key] * 180 / Math.PI).toFixed(0)} degrees`}
+                aria-hidden="true"
               >
                 {(store.rotation[key] * 180 / Math.PI).toFixed(0)}°
+              </span>
+              <span 
+                id={`rotation-${key}-desc`} 
+                className="sr-only"
+              >
+                {desc}
               </span>
             </div>
           ))}

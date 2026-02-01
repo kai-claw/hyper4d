@@ -80,6 +80,34 @@ export function getShapeDescription(shapeName: string, vertexCount: number, edge
 
 // Announce live region updates for screen readers
 export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+  // Try to use existing live region first
+  const existingLiveRegion = document.getElementById('hyper4d-live-region');
+  
+  if (existingLiveRegion) {
+    // Clear existing content first
+    existingLiveRegion.textContent = '';
+    
+    // Set priority if different from default
+    if (priority !== 'polite') {
+      existingLiveRegion.setAttribute('aria-live', priority);
+    }
+    
+    // Add the message after a brief delay to ensure screen readers pick it up
+    setTimeout(() => {
+      existingLiveRegion.textContent = message;
+    }, 50);
+    
+    // Reset to polite after announcement
+    setTimeout(() => {
+      if (priority !== 'polite') {
+        existingLiveRegion.setAttribute('aria-live', 'polite');
+      }
+    }, 1000);
+    
+    return;
+  }
+  
+  // Fallback: create temporary live region (original behavior)
   const announcement = document.createElement('div');
   announcement.setAttribute('aria-live', priority);
   announcement.setAttribute('aria-atomic', 'true');

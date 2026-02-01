@@ -13,18 +13,18 @@ interface TutorialStep {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    title: "Welcome to 4D Space!",
-    content: "You're looking at a 4D hypercube (tesseract) projected into 3D. Think of it as the shadow of a 4D object, just like how a 3D cube casts a 2D shadow on a wall.",
+    title: "🎉 Welcome to the 4th Dimension!",
+    content: "You're looking at something impossible in our 3D world — a 4D cube! Just like a 3D cube casts a 2D shadow on paper, this 4D cube casts a 3D 'shadow' that we can see. Cool, right?",
     position: 'center'
   },
   {
-    title: "Try 3D Rotation",
-    content: "First, get comfortable with regular 3D rotation. Drag with your left mouse button to orbit around the object. This is just like looking at a normal 3D shape.",
+    title: "🕹️ First, Try Normal 3D",
+    content: "Let's start with something familiar. Drag with your mouse to spin the object around. This is just regular 3D rotation — like turning an object in your hands.",
     position: 'center'
   },
   {
-    title: "Now for the Magic: 4D Rotation",
-    content: "Here's where it gets amazing. Hold SHIFT and drag, or right-click and drag. You're now rotating the object through the 4th dimension! Watch how it seems to turn inside-out.",
+    title: "🤯 Now the Mind-Bending Part!",
+    content: "Hold SHIFT and drag, or right-click and drag. You're now rotating the object through the mysterious 4th dimension! Watch it morph and turn inside-out. This is what 4D rotation looks like!",
     action: () => {
       const store = useStore.getState();
       store.setRotation('xw', 0.5);
@@ -32,8 +32,8 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     position: 'center'
   },
   {
-    title: "Understanding the Colors",
-    content: "The blue-to-red coloring shows depth in the 4th dimension. Blue parts are 'near' in 4D space, red parts are 'far'. This helps you see the 4D structure!",
+    title: "🌈 The Secret Color Code",
+    content: "See the blue and red colors? Blue means 'close to you in 4D' and red means 'far from you in 4D'. As you rotate through 4D, watch parts shift from blue to red!",
     action: () => {
       const store = useStore.getState();
       if (!store.colorByW) store.toggleColorByW();
@@ -41,14 +41,14 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     position: 'center'
   },
   {
-    title: "Explore Different Shapes",
-    content: "Try the other 4D shapes! The 24-Cell is unique to 4D - it has no equivalent in any other dimension. Each shape teaches you something different about 4D geometry.",
+    title: "🎲 Try Other Mind-Bending Shapes",
+    content: "Each button shows a different 4D object! The '24-Cell' is super special — it only exists in 4D. No 2D or 3D version is possible. Click around and see what happens!",
     highlight: '.shape-grid',
     position: 'right'
   },
   {
-    title: "4D Cross-Sections",
-    content: "Enable 'W-slice' to see cross-sections through the 4th dimension. It's like slicing a 3D object with a 2D plane, but we're slicing a 4D object with a 3D space!",
+    title: "🔪 Slice Through the 4th Dimension",
+    content: "Turn on 'W-slice' for something amazing: you can slice through the 4D object and see what's inside! It's like doing an MRI scan on a 4D shape.",
     action: () => {
       const store = useStore.getState();
       if (!store.showSlice) store.toggleShowSlice();
@@ -57,8 +57,8 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     position: 'right'
   },
   {
-    title: "You're Ready to Explore!",
-    content: "Press H anytime for keyboard shortcuts, or use the controls on the left. Remember: you're seeing shadows of 4D objects. The real magic is in your mind building intuition for higher dimensions!",
+    title: "🚀 You're Now a 4D Explorer!",
+    content: "Press H for more controls, or just have fun experimenting! Don't worry if it feels weird — even mathematicians find 4D mind-bending. The goal is to play and build intuition. Enjoy the journey!",
     position: 'center'
   }
 ];

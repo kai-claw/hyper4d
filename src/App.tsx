@@ -15,6 +15,7 @@ import { FPSToggle } from './components/FPSCounter';
 import { LoadingState, useThreeJSReady } from './components/LoadingState';
 import { ContextMenu, useContextMenu } from './components/ContextMenu';
 import { LandingExperience } from './components/LandingExperience';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
 import { useReducedMotion } from './hooks/useReducedMotion';
@@ -145,38 +146,43 @@ function App() {
       onDoubleClick={handleDoubleClick}
       onWheel={handleWheel}
     >
+      <main id="main-content" style={{ width: '100%', height: '100%' }}>
       <LoadingState isLoading={!isReady} />
-      <Canvas
-        camera={{
-          position: [0, 0, cameraDistance],
-          fov: 60,
-          near: 0.1,
-          far: 100,
-        }}
-        style={{ background: '#0a0a14' }}
-      >
-        <ambientLight intensity={0.4} />
-        <pointLight position={[10, 10, 10]} intensity={0.8} />
-        <pointLight position={[-10, -10, -10]} intensity={0.3} />
-        <Stars radius={50} depth={40} count={3000} factor={4} fade speed={0.3} />
-        <Scene4D />
-        <GridFloor />
-        <OrbitControls
-          ref={orbitControlsRef}
-          enablePan={false}
-          minDistance={2}
-          maxDistance={20}
-          dampingFactor={0.03}
-          enableDamping
-          autoRotateSpeed={0.5}
-          // Disable right-click orbit so right-drag can do 4D rotation
-          mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.DOLLY,
-            RIGHT: undefined as unknown as THREE.MOUSE,
+      <ErrorBoundary>
+        <Canvas
+          camera={{
+            position: [0, 0, cameraDistance],
+            fov: 60,
+            near: 0.1,
+            far: 100,
           }}
-        />
-      </Canvas>
+          style={{ background: '#0a0a14' }}
+          aria-label="4D shape visualization viewport"
+        >
+          <ambientLight intensity={0.4} />
+          <pointLight position={[10, 10, 10]} intensity={0.8} />
+          <pointLight position={[-10, -10, -10]} intensity={0.3} />
+          <Stars radius={50} depth={40} count={3000} factor={4} fade speed={0.3} />
+          <Scene4D />
+          <GridFloor />
+          <OrbitControls
+            ref={orbitControlsRef}
+            enablePan={false}
+            minDistance={2}
+            maxDistance={20}
+            dampingFactor={0.03}
+            enableDamping
+            autoRotateSpeed={0.5}
+            // Disable right-click orbit so right-drag can do 4D rotation
+            mouseButtons={{
+              LEFT: THREE.MOUSE.ROTATE,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: undefined as unknown as THREE.MOUSE,
+            }}
+          />
+        </Canvas>
+      </ErrorBoundary>
+      </main>
       <Controls />
       <InfoPanel />
       <HelpModal />
@@ -192,6 +198,43 @@ function App() {
         onClose={hideContextMenu} 
       />
       <LandingExperience />
+      
+      {/* Live region for screen reader announcements */}
+      <div
+        id="hyper4d-live-region"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        style={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden'
+        }}
+      />
+      
+      {/* Skip link for keyboard navigation */}
+      <a
+        href="#main-content"
+        className="skip-link"
+        style={{
+          position: 'absolute',
+          top: '-40px',
+          left: '6px',
+          background: '#4fc3f7',
+          color: 'white',
+          padding: '8px',
+          textDecoration: 'none',
+          borderRadius: '4px',
+          zIndex: 10000,
+          transition: 'top 0.3s'
+        }}
+        onFocus={(e) => e.target.style.top = '6px'}
+        onBlur={(e) => e.target.style.top = '-40px'}
+      >
+        Skip to main content
+      </a>
     </div>
   );
 }
