@@ -157,6 +157,8 @@
 .shape-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(79, 195, 247, 0.15);
 }
 .shape-btn.active {
   background: rgba(79, 195, 247, 0.15);
@@ -264,6 +266,8 @@
 }
 .proj-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(79, 195, 247, 0.15);
 }
 .proj-btn.active {
   background: rgba(79, 195, 247, 0.12);
@@ -282,10 +286,34 @@
   cursor: pointer;
   transition: all 0.15s;
   min-height: 32px;
+  flex: 1;
 }
 .btn-small:hover {
   background: rgba(255, 255, 255, 0.1);
   color: white;
+  transform: translateY(-1px);
+}
+
+.btn-screenshot {
+  background: linear-gradient(135deg, #7e57c2, #5e35b1) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.btn-share {
+  background: linear-gradient(135deg, #26c6da, #00acc1) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.btn-screenshot:hover {
+  box-shadow: 0 4px 12px rgba(126, 87, 194, 0.3);
+}
+
+.btn-share:hover {
+  box-shadow: 0 4px 12px rgba(38, 198, 218, 0.3);
 }
 
 /* Mobile touch targets */
@@ -325,6 +353,11 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.footer-row {
+  display: flex;
+  gap: 8px;
 }
 
 .btn-tour {

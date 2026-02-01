@@ -1,0 +1,120 @@
+.landing-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 20, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 1;
+  animation: landingFadeOut 0.8s ease-out 3s forwards;
+}
+
+.landing-overlay.show-ui .landing-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-content {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease-out;
+  color: white;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.landing-title {
+  margin-bottom: 2rem;
+}
+
+.landing-brand {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #4fc3f7, #ab47bc, #66bb6a);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease-in-out infinite;
+  text-shadow: 0 0 30px rgba(79, 195, 247, 0.3);
+}
+
+.landing-subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+  color: #a5d6e8;
+  opacity: 0.9;
+}
+
+.landing-hint {
+  animation: hintFadeIn 0.8s ease-out 0.5s both;
+}
+
+.landing-hint p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #b3e5fc;
+  opacity: 0.8;
+}
+
+.landing-hint-small {
+  font-size: 0.9rem !important;
+  color: #81d4fa !important;
+  opacity: 0.6 !important;
+}
+
+@keyframes landingFadeOut {
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes hintFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .landing-brand {
+    font-size: 2.5rem;
+  }
+  
+  .landing-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .landing-hint p {
+    font-size: 1rem;
+  }
+  
+  .landing-hint-small {
+    font-size: 0.8rem !important;
+  }
+}

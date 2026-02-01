@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import type { ProjectionMode } from '../store/useStore';
 import { SHAPE_CATALOG } from '../engine/shapes4d';
 import type { ShapeKey } from '../engine/shapes4d';
+import { captureCanvasScreenshot, generateShareURL } from '../utils/screenshot';
 import './Controls.css';
 
 const ROTATION_PLANES = [
@@ -25,6 +26,25 @@ const PROJECTION_MODES: { value: ProjectionMode; label: string; desc: string }[]
 export function Controls() {
   const store = useStore();
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
+  const handleScreenshot = () => {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      captureCanvasScreenshot(canvas);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = generateShareURL(store);
+    try {
+      await navigator.clipboard.writeText(url);
+      console.log('Share URL copied to clipboard');
+      // Could add toast notification here
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      prompt('Copy this URL to share:', url);
+    }
+  };
 
   return (
     <div className={`controls ${isMobileExpanded ? 'expanded' : ''}`}>
@@ -276,6 +296,14 @@ export function Controls() {
 
       <div className="controls-footer">
         <div className="footer-buttons">
+          <div className="footer-row">
+            <button className="btn-small btn-screenshot" onClick={handleScreenshot} title="Save current view as PNG">
+              📸 Screenshot
+            </button>
+            <button className="btn-small btn-share" onClick={handleShare} title="Copy shareable link">
+              🔗 Share
+            </button>
+          </div>
           <button className="btn-small btn-tour" onClick={store.startTour}>
             🎯 Start Tour
           </button>
