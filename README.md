@@ -3,7 +3,7 @@
 **Interactive 4D Geometry Visualizer** — rotate, slice, and explore polytopes beyond three dimensions.
 
 <p align="center">
-  <a href="https://psjamesp.github.io/hyper4d/"><strong>🚀 Launch Hyper4D →</strong></a>
+  <a href="https://kai-claw.github.io/hyper4d/"><strong>🚀 Launch Hyper4D →</strong></a>
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ Hyper4D lets you **see and interact with 4-dimensional objects** in your browser
 ## Quick Start
 
 ```bash
-git clone https://github.com/psjamesp/hyper4d.git
+git clone https://github.com/kai-claw/hyper4d.git
 cd hyper4d
 npm install
 npm run dev          # → http://localhost:5173
