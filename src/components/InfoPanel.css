@@ -1,0 +1,85 @@
+.info-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 340px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: rgba(10, 10, 20, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 100;
+}
+
+.info-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.info-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.info-header {
+  margin-bottom: 12px;
+}
+
+.info-header h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.info-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.info-stats span {
+  font-size: 11px;
+  color: #888;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.info-desc {
+  color: #aaa;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.info-section {
+  margin-bottom: 14px;
+}
+
+.info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #4fc3f7;
+  margin-bottom: 4px;
+}
+
+.info-section p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #ccc;
+}
+
+.w-blue {
+  color: #4fc3f7;
+  font-weight: 600;
+}
+
+.w-red {
+  color: #ff7043;
+  font-weight: 600;
+}
