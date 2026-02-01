@@ -35,11 +35,11 @@ export function runShapeValidation(): { passed: boolean; issues: string[] } {
       // Check for duplicate vertices
       const seen = new Set();
       for (let i = 0; i < shape.vertices.length; i++) {
-        const key = shape.vertices[i].join(',');
-        if (seen.has(key)) {
+        const vertexKey = shape.vertices[i].join(',');
+        if (seen.has(vertexKey)) {
           issues.push(`${key}: Duplicate vertex at index ${i}`);
         }
-        seen.add(key);
+        seen.add(vertexKey);
       }
       
       // Check edge validity

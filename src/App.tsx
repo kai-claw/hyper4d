@@ -133,11 +133,6 @@ function App() {
     setCameraDistance(newDistance);
   };
 
-  // Enhanced drag sensitivity
-  const handlePointerDown = (e: React.PointerEvent) => {
-    // Improved drag sensitivity - handled by Drag4D component
-  };
-
   // Keyboard shortcuts for screenshot and share
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

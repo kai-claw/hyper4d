@@ -137,19 +137,11 @@ export function useKeyboardShortcuts() {
           break;
         case 'arrowup':
           e.preventDefault();
-          if (e.shiftKey) {
-            store.setRotation('yw', store.rotation.yw - 0.1);
-          } else {
-            store.setRotation('yw', store.rotation.yw - 0.1);
-          }
+          store.setRotation('yw', store.rotation.yw - 0.1);
           break;
         case 'arrowdown':
           e.preventDefault();
-          if (e.shiftKey) {
-            store.setRotation('yw', store.rotation.yw + 0.1);
-          } else {
-            store.setRotation('yw', store.rotation.yw + 0.1);
-          }
+          store.setRotation('yw', store.rotation.yw + 0.1);
           break;
       }
     }
