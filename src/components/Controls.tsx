@@ -202,14 +202,36 @@ export function Controls() {
         {store.showSlice && (
           <>
             <div className="slice-hint">
-              <span>💡 Move the W position to slice through different parts of the 4D object</span>
+              <span>💡 <strong>Flatland Analogy:</strong> This is like a 2D being seeing slices of a 3D cube — you're seeing slices of a 4D object!</span>
             </div>
+            
+            <div className="slice-animation">
+              <button 
+                className={`btn-small ${store.isSliceAnimating ? 'active' : ''}`}
+                onClick={store.isSliceAnimating ? store.stopSliceAnimation : store.startSliceAnimation}
+              >
+                {store.isSliceAnimating ? '⏸️ Stop MRI Scan' : '▶️ Start MRI Scan'}
+              </button>
+              {store.isSliceAnimating && (
+                <div className="slider-row">
+                  <label>Scan Speed</label>
+                  <input
+                    type="range" min={0.5} max={3} step={0.1}
+                    value={store.sliceAnimationSpeed}
+                    onChange={(e) => store.setSliceAnimationSpeed(parseFloat(e.target.value))}
+                  />
+                  <span className="value">{store.sliceAnimationSpeed.toFixed(1)}x</span>
+                </div>
+              )}
+            </div>
+
             <div className="slider-row">
               <label>W pos</label>
               <input
                 type="range" min={-2} max={2} step={0.01}
                 value={store.wSlicePosition}
                 onChange={(e) => store.setWSlicePosition(parseFloat(e.target.value))}
+                disabled={store.isSliceAnimating}
               />
               <span className="value">{store.wSlicePosition.toFixed(2)}</span>
             </div>
@@ -222,6 +244,17 @@ export function Controls() {
               />
               <span className="value">{store.wSliceThickness.toFixed(2)}</span>
             </div>
+
+            <div className="slice-explanation">
+              <div className="explanation-item">
+                <span className="explain-icon">🔪</span>
+                <span>Each slice shows what a 3D being would see when the 4D object intersects their 3D space</span>
+              </div>
+              <div className="explanation-item">
+                <span className="explain-icon">🎥</span>
+                <span>Watch how cubes appear and disappear as you slice through a tesseract!</span>
+              </div>
+            </div>
           </>
         )}
       </Section>
@@ -230,6 +263,18 @@ export function Controls() {
         <div className="footer-buttons">
           <button className="btn-small btn-tour" onClick={store.startTour}>
             🎯 Start Tour
+          </button>
+          <button 
+            className="btn-small btn-learn" 
+            onClick={() => store.setLearnMode(true)}
+          >
+            🎓 Learn 4D
+          </button>
+          <button 
+            className="btn-small btn-compare" 
+            onClick={store.toggleComparison}
+          >
+            ⚖️ Compare 3D↔4D
           </button>
           <button className="btn-small" onClick={store.toggleInfo}>
             {store.showInfo ? 'Hide' : 'Show'} Info Panel

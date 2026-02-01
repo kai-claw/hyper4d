@@ -130,6 +130,19 @@ export function Scene4D() {
       needsUpdate = true; // Auto-rotation always needs update
     }
 
+    // Update slice animation (MRI scan effect)
+    const { isSliceAnimating, sliceAnimationSpeed, setWSlicePosition } = useStore.getState();
+    if (isSliceAnimating && showSlice) {
+      const speed = sliceAnimationSpeed * delta * 2; // 2 units per second at speed 1
+      const newPos = wSlicePosition + speed;
+      if (newPos > 2) {
+        setWSlicePosition(-2); // Reset to start
+      } else {
+        setWSlicePosition(newPos);
+      }
+      needsUpdate = true;
+    }
+
     const r = rotationRef.current;
     const totalR = {
       xy: r.xy + rotation.xy,

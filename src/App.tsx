@@ -9,6 +9,8 @@ import { HelpModal } from './components/HelpModal';
 import { GridFloor } from './components/GridFloor';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { TourMode } from './components/TourMode';
+import { LearnMode } from './components/LearnMode';
+import { ComparisonMode } from './components/ComparisonMode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
 import { useStore } from './store/useStore';
@@ -58,6 +60,8 @@ function App() {
       <HelpModal />
       <TutorialOverlay />
       <TourMode />
+      <LearnMode />
+      <ComparisonMode />
     </div>
   );
 }

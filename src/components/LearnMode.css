@@ -1,0 +1,313 @@
+/* Interactive Learning Modules Styles */
+
+.learn-mode-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.learn-mode-panel {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #4fc3f7;
+  border-radius: 16px;
+  max-width: 700px;
+  max-height: 85vh;
+  width: 90vw;
+  overflow-y: auto;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(79, 195, 247, 0.2);
+  color: white;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.learn-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.learn-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4fc3f7;
+}
+
+.step-counter {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-left: 12px;
+}
+
+.learn-nav-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-back, .btn-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover, .btn-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.learn-description {
+  padding: 0 24px 16px;
+  color: #ccc;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+
+.module-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-card:hover {
+  background: rgba(79, 195, 247, 0.1);
+  border-color: #4fc3f7;
+  transform: translateY(-2px);
+}
+
+.module-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4fc3f7;
+}
+
+.module-card p {
+  margin: 0;
+  color: #ccc;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.module-steps {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: auto;
+}
+
+.step-content {
+  padding: 24px;
+}
+
+.step-content h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #4fc3f7;
+}
+
+.step-text {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #ddd;
+  margin: 0 0 20px 0;
+}
+
+.interactive-hint {
+  background: rgba(102, 187, 106, 0.1);
+  border: 1px solid rgba(102, 187, 106, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.hint-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.interactive-hint p {
+  margin: 0;
+  color: #a5d6a7;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.step-progress {
+  padding: 20px 24px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4fc3f7, #66bb6a);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.step-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.btn-prev, .btn-next {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-next {
+  background: linear-gradient(135deg, #4fc3f7, #42a5f5);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-prev:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-next:hover:not(:disabled) {
+  background: linear-gradient(135deg, #42a5f5, #1e88e5);
+  transform: translateY(-1px);
+}
+
+.btn-prev:disabled, .btn-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.learn-footer {
+  padding: 0 24px 24px;
+  text-align: center;
+}
+
+.learn-footer p {
+  margin: 0;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .learn-mode-panel {
+    width: 95vw;
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+  
+  .learn-header {
+    padding: 16px 16px 12px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .learn-nav-buttons {
+    align-self: flex-end;
+  }
+  
+  .step-content {
+    padding: 16px;
+  }
+  
+  .step-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .step-text {
+    font-size: 1rem;
+  }
+  
+  .module-grid {
+    padding: 0 16px 16px;
+  }
+  
+  .step-progress {
+    padding: 16px;
+  }
+  
+  .step-buttons {
+    flex-direction: column;
+  }
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+  .learn-mode-panel {
+    border-color: #ffffff;
+    background: #000000;
+  }
+  
+  .module-card {
+    border-color: #ffffff;
+  }
+  
+  .interactive-hint {
+    border-color: #ffffff;
+  }
+}

@@ -95,6 +95,25 @@ interface AppState {
   stopTour: () => void;
   nextTourStep: () => void;
   prevTourStep: () => void;
+
+  // Learn mode
+  showLearnMode: boolean;
+  learnModuleId: string | null;
+  learnStep: number;
+  setLearnMode: (show: boolean, moduleId?: string | null, step?: number) => void;
+
+  // Comparison mode
+  showComparison: boolean;
+  comparisonShape: string;
+  toggleComparison: () => void;
+  setComparisonShape: (shape: string) => void;
+
+  // Cross-section animation
+  isSliceAnimating: boolean;
+  sliceAnimationSpeed: number;
+  startSliceAnimation: () => void;
+  stopSliceAnimation: () => void;
+  setSliceAnimationSpeed: (speed: number) => void;
 }
 
 const DEFAULT_ROTATION: RotationState = {
@@ -194,4 +213,27 @@ export const useStore = create<AppState>((set) => ({
   stopTour: () => set({ isTourMode: false, tourStep: 0 }),
   nextTourStep: () => set((s) => ({ tourStep: s.tourStep + 1 })),
   prevTourStep: () => set((s) => ({ tourStep: Math.max(0, s.tourStep - 1) })),
+
+  // Learn mode
+  showLearnMode: false,
+  learnModuleId: null,
+  learnStep: 0,
+  setLearnMode: (show, moduleId = null, step = 0) => set({ 
+    showLearnMode: show, 
+    learnModuleId: moduleId, 
+    learnStep: step 
+  }),
+
+  // Comparison mode
+  showComparison: false,
+  comparisonShape: 'tesseract',
+  toggleComparison: () => set((s) => ({ showComparison: !s.showComparison })),
+  setComparisonShape: (shape) => set({ comparisonShape: shape }),
+
+  // Cross-section animation
+  isSliceAnimating: false,
+  sliceAnimationSpeed: 1,
+  startSliceAnimation: () => set({ isSliceAnimating: true }),
+  stopSliceAnimation: () => set({ isSliceAnimating: false }),
+  setSliceAnimationSpeed: (speed) => set({ sliceAnimationSpeed: speed }),
 }));

@@ -11,6 +11,14 @@ export interface Shape4D {
   faces?: number[][]; // groups of vertex indices forming faces
   cells?: number[][]; // groups of face indices forming cells (for 4D polytopes)
   color: string;
+  funFact?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export interface ShapeCatalogEntry {
+  create: (size?: number) => Shape4D;
+  label: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 
 // === Tesseract (Hypercube) — 4D analog of a cube ===
@@ -301,14 +309,193 @@ export function create4DSphere(radius: number = 1, detail: number = 3): Shape4D 
   };
 }
 
+// === 600-Cell (Simplified) — has 120 vertices in full form ===
+// For performance, we'll create a simplified version with key vertices
+export function create600Cell(size: number = 1): Shape4D {
+  const vertices: Vec4[] = [];
+  const edges: [number, number][] = [];
+  
+  const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
+  const scale = size / 2;
+  
+  // 120 vertices of the 600-cell are complex, so we'll create a representative subset
+  // The 600-cell has vertices at:
+  // 1. All even permutations and sign changes of (1, 1, 1, √5) / 2
+  // 2. All vertices of the 16-cell: (±2, 0, 0, 0) and permutations
+  // 3. All vertices related to golden ratio: (0, ±1, ±φ, ±1/φ) and even permutations
+  
+  // Simplified: Take key vertex types for visualization
+  const coords = [
+    // 16-cell vertices (scaled)
+    [2, 0, 0, 0], [-2, 0, 0, 0],
+    [0, 2, 0, 0], [0, -2, 0, 0], 
+    [0, 0, 2, 0], [0, 0, -2, 0],
+    [0, 0, 0, 2], [0, 0, 0, -2],
+    
+    // Golden ratio vertices (selected permutations)
+    [0, 1, phi, 1/phi], [0, -1, phi, 1/phi], [0, 1, -phi, 1/phi], [0, 1, phi, -1/phi],
+    [1, 0, 1/phi, phi], [-1, 0, 1/phi, phi], [1, 0, -1/phi, phi], [1, 0, 1/phi, -phi],
+    [1/phi, phi, 0, 1], [1/phi, -phi, 0, 1], [-1/phi, phi, 0, 1], [1/phi, phi, 0, -1],
+    [phi, 1/phi, 1, 0], [-phi, 1/phi, 1, 0], [phi, -1/phi, 1, 0], [phi, 1/phi, -1, 0],
+    
+    // Some vertices from (1,1,1,√5) family
+    [1, 1, 1, Math.sqrt(5)], [1, 1, -1, Math.sqrt(5)], [1, -1, 1, Math.sqrt(5)], [-1, 1, 1, Math.sqrt(5)],
+    [1, 1, 1, -Math.sqrt(5)], [1, 1, -1, -Math.sqrt(5)], [1, -1, 1, -Math.sqrt(5)], [-1, 1, 1, -Math.sqrt(5)],
+  ];
+  
+  for (const coord of coords) {
+    vertices.push(vec4(
+      coord[0] * scale / 2, 
+      coord[1] * scale / 2, 
+      coord[2] * scale / 2, 
+      coord[3] * scale / 2
+    ));
+  }
+  
+  // Connect vertices that are close enough (simplified connectivity)
+  const MAX_EDGES = 200;
+  const threshold = (size * 1.2) ** 2;
+  
+  for (let i = 0; i < vertices.length && edges.length < MAX_EDGES; i++) {
+    for (let j = i + 1; j < vertices.length && edges.length < MAX_EDGES; j++) {
+      const dx = vertices[i][0] - vertices[j][0];
+      const dy = vertices[i][1] - vertices[j][1];
+      const dz = vertices[i][2] - vertices[j][2];
+      const dw = vertices[i][3] - vertices[j][3];
+      const dist2 = dx * dx + dy * dy + dz * dz + dw * dw;
+      if (dist2 < threshold) {
+        edges.push([i, j]);
+      }
+    }
+  }
+
+  return {
+    name: '600-Cell (Simplified)',
+    description: 'Simplified 600-cell — the most complex regular 4D polytope with 120 vertices and 720 edges in its full form',
+    vertices,
+    edges,
+    color: '#8e24aa',
+  };
+}
+
+// === 3,3-Duoprism — Product of two triangles ===
+// Uniquely 4D: no 3D analog exists!
+export function createDuoprism33(size: number = 1): Shape4D {
+  const vertices: Vec4[] = [];
+  const edges: [number, number][] = [];
+  
+  const s = size;
+  // First triangle vertices in XY plane  
+  const tri1 = [
+    vec4(s * Math.cos(0), s * Math.sin(0), 0, 0),
+    vec4(s * Math.cos(2 * Math.PI / 3), s * Math.sin(2 * Math.PI / 3), 0, 0),
+    vec4(s * Math.cos(4 * Math.PI / 3), s * Math.sin(4 * Math.PI / 3), 0, 0),
+  ];
+  
+  // Second triangle vertices in ZW plane
+  const tri2 = [
+    vec4(0, 0, s * Math.cos(0), s * Math.sin(0)),
+    vec4(0, 0, s * Math.cos(2 * Math.PI / 3), s * Math.sin(2 * Math.PI / 3)),
+    vec4(0, 0, s * Math.cos(4 * Math.PI / 3), s * Math.sin(4 * Math.PI / 3)),
+  ];
+  
+  // Cartesian product: every vertex of tri1 with every vertex of tri2
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      vertices.push(vec4(
+        tri1[i][0] + tri2[j][0],
+        tri1[i][1] + tri2[j][1], 
+        tri1[i][2] + tri2[j][2],
+        tri1[i][3] + tri2[j][3]
+      ));
+    }
+  }
+  
+  // Edges: connect vertices that differ in only one triangle
+  for (let i = 0; i < 9; i++) {
+    for (let j = i + 1; j < 9; j++) {
+      const i1 = Math.floor(i / 3), j1 = i % 3;
+      const i2 = Math.floor(j / 3), j2 = j % 3;
+      
+      // Same triangle in one dimension, adjacent in the other
+      if ((i1 === i2 && Math.abs(j1 - j2) === 1) || 
+          (j1 === j2 && Math.abs(i1 - i2) === 1) ||
+          (i1 === i2 && j1 === 0 && j2 === 2) ||
+          (i1 === i2 && j1 === 2 && j2 === 0) ||
+          (j1 === j2 && i1 === 0 && i2 === 2) ||
+          (j1 === j2 && i1 === 2 && i2 === 0)) {
+        edges.push([i, j]);
+      }
+    }
+  }
+  
+  return {
+    name: '3,3-Duoprism',
+    description: 'Product of two triangles — a purely 4D object with no 3D analog! 9 vertices, 18 edges',
+    vertices,
+    edges,
+    color: '#26c6da',
+  };
+}
+
+// === 4,4-Duoprism — Product of two squares ===
+export function createDuoprism44(size: number = 1): Shape4D {
+  const vertices: Vec4[] = [];
+  const edges: [number, number][] = [];
+  
+  const s = size / 2;
+  
+  // Two squares
+  const square1 = [vec4(s, s, 0, 0), vec4(s, -s, 0, 0), vec4(-s, -s, 0, 0), vec4(-s, s, 0, 0)];
+  const square2 = [vec4(0, 0, s, s), vec4(0, 0, s, -s), vec4(0, 0, -s, -s), vec4(0, 0, -s, s)];
+  
+  // Cartesian product
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      vertices.push(vec4(
+        square1[i][0] + square2[j][0],
+        square1[i][1] + square2[j][1], 
+        square1[i][2] + square2[j][2],
+        square1[i][3] + square2[j][3]
+      ));
+    }
+  }
+  
+  // Edges connect adjacent vertices in the product
+  for (let i = 0; i < 16; i++) {
+    for (let j = i + 1; j < 16; j++) {
+      const i1 = Math.floor(i / 4), j1 = i % 4;
+      const i2 = Math.floor(j / 4), j2 = j % 4;
+      
+      if ((i1 === i2 && Math.abs(j1 - j2) === 1) || 
+          (j1 === j2 && Math.abs(i1 - i2) === 1) ||
+          (i1 === i2 && ((j1 === 0 && j2 === 3) || (j1 === 3 && j2 === 0))) ||
+          (j1 === j2 && ((i1 === 0 && i2 === 3) || (i1 === 3 && i2 === 0)))) {
+        edges.push([i, j]);
+      }
+    }
+  }
+  
+  return {
+    name: '4,4-Duoprism',
+    description: 'Product of two squares — purely 4D with no 3D equivalent! 16 vertices, 32 edges',
+    vertices,
+    edges,
+    color: '#66bb6a',
+  };
+}
+
 // All shape constructors
 export const SHAPE_CATALOG = {
-  tesseract: { create: createTesseract, label: 'Tesseract (Hypercube)' },
-  '16cell': { create: create16Cell, label: '16-Cell' },
-  '24cell': { create: create24Cell, label: '24-Cell' },
-  '5cell': { create: create5Cell, label: '5-Cell (Simplex)' },
-  torus: { create: create4DTorus, label: 'Clifford Torus' },
-  sphere: { create: create4DSphere, label: '4D Sphere' },
+  tesseract: { create: createTesseract, label: 'Tesseract', difficulty: 'beginner' },
+  '16cell': { create: create16Cell, label: '16-Cell', difficulty: 'beginner' },
+  '24cell': { create: create24Cell, label: '24-Cell', difficulty: 'intermediate' },
+  '5cell': { create: create5Cell, label: '5-Cell', difficulty: 'beginner' },
+  torus: { create: create4DTorus, label: 'Clifford Torus', difficulty: 'advanced' },
+  sphere: { create: create4DSphere, label: '4D Sphere', difficulty: 'intermediate' },
+  '600cell': { create: create600Cell, label: '600-Cell', difficulty: 'advanced' },
+  'duoprism33': { create: createDuoprism33, label: '3,3-Duoprism', difficulty: 'intermediate' },
+  'duoprism44': { create: createDuoprism44, label: '4,4-Duoprism', difficulty: 'intermediate' },
 } as const;
 
 export type ShapeKey = keyof typeof SHAPE_CATALOG;
