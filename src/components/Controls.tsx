@@ -6,6 +6,8 @@ import type { ProjectionMode } from '../store/useStore';
 import { SHAPE_CATALOG } from '../engine/shapes4d';
 import type { ShapeKey } from '../engine/shapes4d';
 import { captureCanvasScreenshot, generateShareURL } from '../utils/screenshot';
+import { ThemeSelector, ThemeQuickSelector } from './ThemeSelector';
+import { useCameraAnimations } from './CameraController';
 import './Controls.css';
 
 const ROTATION_PLANES = [
@@ -26,6 +28,7 @@ const PROJECTION_MODES: { value: ProjectionMode; label: string; desc: string }[]
 export function Controls() {
   const store = useStore();
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const { orbitShape, breathingMode, manualMode } = useCameraAnimations();
 
   // Announce shape changes to screen readers
   useEffect(() => {
@@ -324,6 +327,105 @@ export function Controls() {
         )}
       </Section>
 
+      {/* Theme Selector */}
+      <Section title="Color Theme" collapsible defaultOpen={false}>
+        <ThemeQuickSelector />
+      </Section>
+
+      {/* Audio Controls */}
+      <Section title="Ambient Audio" collapsible defaultOpen={false}>
+        <div className="audio-controls">
+          <label className="audio-toggle">
+            <input 
+              type="checkbox" 
+              checked={!store.isAudioMuted} 
+              onChange={store.toggleAudio} 
+            />
+            Enable ambient audio
+          </label>
+          {!store.isAudioMuted && (
+            <div className="slider-row">
+              <label>Volume</label>
+              <input
+                type="range" min={0} max={1} step={0.1}
+                value={store.audioVolume}
+                onChange={(e) => store.setAudioVolume(parseFloat(e.target.value))}
+              />
+              <span className="value">{(store.audioVolume * 100).toFixed(0)}%</span>
+            </div>
+          )}
+          <div className="audio-hint">
+            <span>🎵 Generative soundscape that responds to shape and rotation</span>
+          </div>
+        </div>
+      </Section>
+
+      {/* Camera Controls */}
+      <Section title="Camera Mode" collapsible defaultOpen={false}>
+        <div className="camera-modes">
+          <button
+            className={`cam-btn ${store.cameraMode === 'manual' ? 'active' : ''}`}
+            onClick={manualMode}
+            title="Manual camera control"
+          >
+            Manual
+          </button>
+          <button
+            className={`cam-btn ${store.cameraMode === 'orbit' ? 'active' : ''}`}
+            onClick={orbitShape}
+            title="Auto-orbit around the shape"
+          >
+            Orbit
+          </button>
+          <button
+            className={`cam-btn ${store.cameraMode === 'breathing' ? 'active' : ''}`}
+            onClick={breathingMode}
+            title="Breathing zoom in/out"
+          >
+            Breathing
+          </button>
+        </div>
+        {store.cameraMode === 'orbit' && (
+          <div className="slider-row">
+            <label>Orbit Speed</label>
+            <input
+              type="range" min={0.1} max={2} step={0.1}
+              value={store.cameraOrbitSpeed}
+              onChange={(e) => store.setCameraOrbitSpeed(parseFloat(e.target.value))}
+            />
+            <span className="value">{store.cameraOrbitSpeed.toFixed(1)}x</span>
+          </div>
+        )}
+      </Section>
+
+      {/* Shader Effects */}
+      <Section title="Visual Effects" collapsible defaultOpen={false}>
+        <div className="checkbox-group">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={store.enableShaderEffects} 
+              onChange={store.toggleShaderEffects} 
+            />
+            Custom Shaders
+          </label>
+        </div>
+        {store.enableShaderEffects && (
+          <div className="slider-row">
+            <label>Pulse Speed</label>
+            <input
+              type="range" min={0.2} max={3} step={0.1}
+              value={store.pulseSpeed}
+              onChange={(e) => store.setPulseSpeed(parseFloat(e.target.value))}
+            />
+            <span className="value">{store.pulseSpeed.toFixed(1)}x</span>
+          </div>
+        )}
+        <div className="effects-hint">
+          <span>✨ Animated pulse, particle trails, W-depth coloring</span>
+        </div>
+      </Section>
+
       <div className="controls-footer">
         <div className="footer-buttons">
           <div className="footer-row">
@@ -351,6 +453,13 @@ export function Controls() {
           </button>
           <button className="btn-small" onClick={store.toggleInfo}>
             {store.showInfo ? 'Hide' : 'Show'} Info Panel
+          </button>
+          <button 
+            className="btn-small btn-immersive" 
+            onClick={store.toggleImmersiveMode}
+            title="Fullscreen meditation mode (F key)"
+          >
+            🧘 Immersive Mode
           </button>
         </div>
         <div className="hint-text">

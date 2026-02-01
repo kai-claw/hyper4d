@@ -1,6 +1,6 @@
 // Main 4D→3D scene renderer - OPTIMIZED FOR PERFORMANCE
 
-import { useRef, useMemo, useCallback } from 'react';
+import { useRef, useMemo, useCallback, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useStore } from '../store/useStore';
@@ -17,6 +17,9 @@ import {
   vec4,
 } from '../engine/math4d';
 import { wToColorCached } from '../utils/ColorCache';
+import { HyperEdgeMaterial, HyperVertexMaterial } from '../materials/HyperShader';
+import { ParticleSystem } from '../effects/ParticleSystem';
+import { AmbientAudio } from '../audio/AmbientAudio';
 
 // Performance constants
 const UPDATE_THRESHOLD = 0.001;
@@ -45,12 +48,20 @@ export function Scene4D() {
     showSlice, wSlicePosition, wSliceThickness,
     colorByW,
     updateAnimations,
+    colorTheme,
+    enableShaderEffects,
+    pulseSpeed,
+    isAudioMuted,
+    audioVolume,
   } = useStore();
 
   const rotationRef = useRef({ ...rotation });
   const groupRef = useRef<THREE.Group>(null);
+  const particleSystemRef = useRef<any>(null);
+  const audioSystemRef = useRef<AmbientAudio | null>(null);
   const shapeTransitionRef = useRef({ progress: 1, fromShape: null as any, toShape: null as any });
   const lastActiveShapeRef = useRef(activeShape);
+  const lastWSlicePosition = useRef(wSlicePosition);
   const lastUpdateRef = useRef({
     rotation: { ...rotation },
     projectionMode,
@@ -60,6 +71,42 @@ export function Scene4D() {
     wSliceThickness,
     colorByW,
   });
+  
+  // Shader materials
+  const edgeMaterialRef = useRef<HyperEdgeMaterial | null>(null);
+  const vertexMaterialRef = useRef<HyperVertexMaterial | null>(null);
+
+  // Initialize audio system
+  useEffect(() => {
+    const audio = new AmbientAudio();
+    audioSystemRef.current = audio;
+    
+    // Add click listener to start audio (Web Audio requires user gesture)
+    const handleUserGesture = () => {
+      audio.startWithUserGesture();
+      document.removeEventListener('click', handleUserGesture);
+    };
+    document.addEventListener('click', handleUserGesture);
+    
+    return () => {
+      document.removeEventListener('click', handleUserGesture);
+      audio.dispose();
+    };
+  }, []);
+  
+  // Update audio settings
+  useEffect(() => {
+    if (audioSystemRef.current) {
+      audioSystemRef.current.setMuted(isAudioMuted);
+      audioSystemRef.current.setVolume(audioVolume);
+    }
+  }, [isAudioMuted, audioVolume]);
+  
+  useEffect(() => {
+    if (audioSystemRef.current) {
+      audioSystemRef.current.setShape(activeShape);
+    }
+  }, [activeShape]);
 
   // Get the current shape with morphing support
   const shape = useMemo(() => {
@@ -91,11 +138,25 @@ export function Scene4D() {
     }
   }, [projectionMode, viewDistance]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
+    
+    const time = state.clock.elapsedTime;
 
     // Update smooth parameter animations
     updateAnimations(delta);
+    
+    // Update shader materials time
+    if (enableShaderEffects) {
+      if (edgeMaterialRef.current) {
+        edgeMaterialRef.current.updateTime(time);
+        edgeMaterialRef.current.setPulseSpeed(pulseSpeed);
+      }
+      if (vertexMaterialRef.current) {
+        vertexMaterialRef.current.updateTime(time);
+        vertexMaterialRef.current.setPulseSpeed(pulseSpeed);
+      }
+    }
 
     // Check if anything that affects the geometry has changed
     const last = lastUpdateRef.current;
@@ -130,6 +191,13 @@ export function Scene4D() {
         storeState.setWSlicePosition(newPos);
       }
       needsUpdate = true;
+      
+      // Detect when slice crosses vertices for audio/particle effects
+      const sliceMovement = Math.abs(newPos - lastWSlicePosition.current);
+      if (sliceMovement > 0.1) { // Threshold to avoid too many triggers
+        checkCrossSectionEvents(newPos, lastWSlicePosition.current);
+        lastWSlicePosition.current = newPos;
+      }
     }
 
     const r = rotationRef.current;
@@ -166,6 +234,17 @@ export function Scene4D() {
     }
 
     if (!needsUpdate) return; // Skip expensive calculations - EARLY RETURN
+
+    // Calculate rotation speed for audio feedback
+    const rotationSpeed = Math.sqrt(
+      totalR.xy * totalR.xy + totalR.xz * totalR.xz + totalR.xw * totalR.xw +
+      totalR.yz * totalR.yz + totalR.yw * totalR.yw + totalR.zw * totalR.zw
+    );
+    
+    // Update audio with rotation speed
+    if (audioSystemRef.current) {
+      audioSystemRef.current.setRotationSpeed(rotationSpeed);
+    }
 
     // Update last values (deep copy avoided where possible)
     Object.assign(lastUpdateRef.current.rotation, rotation);
@@ -267,6 +346,19 @@ export function Scene4D() {
     
     _lastTransformCache.minW = minW;
     _lastTransformCache.maxW = maxW;
+    
+    // Update shader materials with W range and theme
+    if (enableShaderEffects) {
+      if (edgeMaterialRef.current) {
+        edgeMaterialRef.current.updateWRange(minW, maxW);
+        edgeMaterialRef.current.updateTheme(colorTheme);
+      }
+      if (vertexMaterialRef.current) {
+        vertexMaterialRef.current.updateWRange(minW, maxW);
+        vertexMaterialRef.current.updateTheme(colorTheme);
+        vertexMaterialRef.current.setRotationSpeed(rotationSpeed);
+      }
+    }
 
     // Update vertex meshes - OPTIMIZED
     const vertGroup = groupRef.current.children[1] as THREE.Group;
@@ -337,8 +429,47 @@ export function Scene4D() {
       }
       pos.needsUpdate = true;
       col.needsUpdate = true;
+      // Add trail particles for rotating vertices
+      if (enableShaderEffects && rotationSpeed > 0.1) {
+        for (let i = 0; i < Math.min(projected.length, 20); i++) { // Limit for performance
+          if (Math.random() < 0.05) {
+            const pos = new THREE.Vector3(...projected[i]);
+            if (particleSystemRef.current?.addTrailParticle) {
+              particleSystemRef.current.addTrailParticle(pos, rotationSpeed);
+            }
+          }
+        }
+      }
     }
   });
+
+  // Helper function to detect cross-section events
+  const checkCrossSectionEvents = useCallback((newSlicePos: number, oldSlicePos: number) => {
+    if (!enableShaderEffects || !shape.vertices) return;
+    
+    for (let i = 0; i < shape.vertices.length; i++) {
+      const w = shape.vertices[i][3];
+      
+      // Check if vertex crossed the slice plane
+      if ((oldSlicePos <= w && newSlicePos > w) || (oldSlicePos >= w && newSlicePos < w)) {
+        // Vertex crossed the slice plane - trigger effects
+        const projected3D = project(shape.vertices[i]);
+        const position = new THREE.Vector3(projected3D[0], projected3D[1], projected3D[2]);
+        
+        // Trigger particle burst
+        if (particleSystemRef.current?.triggerCrossSectionBurst) {
+          particleSystemRef.current.triggerCrossSectionBurst(position);
+        }
+        
+        // Trigger audio event
+        if (audioSystemRef.current) {
+          audioSystemRef.current.onCrossSectionEvent();
+        }
+        
+        break; // Only trigger once per frame to avoid spam
+      }
+    }
+  }, [enableShaderEffects, shape.vertices, project]);
 
   // Create LineSegments geometry
   const linesGeo = useMemo(() => {
@@ -357,30 +488,47 @@ export function Scene4D() {
     return geo;
   }, [shape.edges.length, activeShape, shape.color]);
 
+  // Initialize shader materials
+  if (enableShaderEffects && !edgeMaterialRef.current) {
+    edgeMaterialRef.current = new HyperEdgeMaterial(colorTheme);
+  }
+  if (enableShaderEffects && !vertexMaterialRef.current) {
+    vertexMaterialRef.current = new HyperVertexMaterial(colorTheme);
+  }
+
   return (
     <group ref={groupRef}>
-      {/* Edges with glow effect */}
+      {/* Edges with custom shader or basic material */}
       <lineSegments geometry={linesGeo}>
-        <lineBasicMaterial
-          vertexColors
-          transparent
-          opacity={edgeOpacity}
-          linewidth={2}
-          toneMapped={false}
-        />
+        {enableShaderEffects && edgeMaterialRef.current ? (
+          <primitive object={edgeMaterialRef.current} attach="material" />
+        ) : (
+          <lineBasicMaterial
+            vertexColors
+            transparent
+            opacity={edgeOpacity}
+            linewidth={2}
+            toneMapped={false}
+          />
+        )}
       </lineSegments>
       
-      {/* Second layer for glow effect */}
-      <lineSegments geometry={linesGeo}>
-        <lineBasicMaterial
-          vertexColors
-          transparent
-          opacity={edgeOpacity * 0.3}
-          linewidth={4}
-          toneMapped={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </lineSegments>
+      {/* Second layer for glow effect (only with basic materials) */}
+      {!enableShaderEffects && (
+        <lineSegments geometry={linesGeo}>
+          <lineBasicMaterial
+            vertexColors
+            transparent
+            opacity={edgeOpacity * 0.3}
+            linewidth={4}
+            toneMapped={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </lineSegments>
+      )}
+      
+      {/* Particle system */}
+      <ParticleSystem ref={particleSystemRef} />
 
       {/* Vertices with enhanced glow */}
       <group>
@@ -389,14 +537,18 @@ export function Scene4D() {
             {/* Main vertex */}
             <mesh>
               <sphereGeometry args={[0.06, 16, 16]} />
-              <meshStandardMaterial
-                color={shape.color}
-                emissive={shape.color}
-                emissiveIntensity={0.4}
-                metalness={0.1}
-                roughness={0.2}
-                toneMapped={false}
-              />
+              {enableShaderEffects && vertexMaterialRef.current ? (
+                <primitive object={vertexMaterialRef.current} attach="material" />
+              ) : (
+                <meshStandardMaterial
+                  color={shape.color}
+                  emissive={shape.color}
+                  emissiveIntensity={0.4}
+                  metalness={0.1}
+                  roughness={0.2}
+                  toneMapped={false}
+                />
+              )}
             </mesh>
             {/* Glow halo */}
             <mesh>

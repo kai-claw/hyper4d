@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import type { ShapeKey } from '../engine/shapes4d';
 
 export type ProjectionMode = 'perspective' | 'orthographic' | 'stereographic';
+export type ColorTheme = 'deepSpace' | 'synthwave' | 'monochrome' | 'aurora';
+export type CameraMode = 'manual' | 'orbit' | 'breathing';
 
 interface RotationState {
   xy: number;
@@ -114,6 +116,32 @@ interface AppState {
   startSliceAnimation: () => void;
   stopSliceAnimation: () => void;
   setSliceAnimationSpeed: (speed: number) => void;
+
+  // Color themes
+  colorTheme: ColorTheme;
+  setColorTheme: (theme: ColorTheme) => void;
+
+  // Immersive mode
+  isImmersiveMode: boolean;
+  toggleImmersiveMode: () => void;
+
+  // Audio
+  isAudioMuted: boolean;
+  audioVolume: number;
+  toggleAudio: () => void;
+  setAudioVolume: (volume: number) => void;
+
+  // Camera modes
+  cameraMode: CameraMode;
+  setCameraMode: (mode: CameraMode) => void;
+  cameraOrbitSpeed: number;
+  setCameraOrbitSpeed: (speed: number) => void;
+
+  // Shader effects
+  enableShaderEffects: boolean;
+  toggleShaderEffects: () => void;
+  pulseSpeed: number;
+  setPulseSpeed: (speed: number) => void;
 }
 
 const DEFAULT_ROTATION: RotationState = {
@@ -236,4 +264,30 @@ export const useStore = create<AppState>((set) => ({
   startSliceAnimation: () => set({ isSliceAnimating: true }),
   stopSliceAnimation: () => set({ isSliceAnimating: false }),
   setSliceAnimationSpeed: (speed) => set({ sliceAnimationSpeed: speed }),
+
+  // Color themes
+  colorTheme: 'deepSpace',
+  setColorTheme: (theme) => set({ colorTheme: theme }),
+
+  // Immersive mode
+  isImmersiveMode: false,
+  toggleImmersiveMode: () => set((s) => ({ isImmersiveMode: !s.isImmersiveMode })),
+
+  // Audio
+  isAudioMuted: true, // Start muted
+  audioVolume: 0.3,
+  toggleAudio: () => set((s) => ({ isAudioMuted: !s.isAudioMuted })),
+  setAudioVolume: (volume) => set({ audioVolume: volume }),
+
+  // Camera modes
+  cameraMode: 'manual',
+  setCameraMode: (mode) => set({ cameraMode: mode }),
+  cameraOrbitSpeed: 0.5,
+  setCameraOrbitSpeed: (speed) => set({ cameraOrbitSpeed: speed }),
+
+  // Shader effects
+  enableShaderEffects: true,
+  toggleShaderEffects: () => set((s) => ({ enableShaderEffects: !s.enableShaderEffects })),
+  pulseSpeed: 1.0,
+  setPulseSpeed: (speed) => set({ pulseSpeed: speed }),
 }));

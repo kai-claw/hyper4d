@@ -16,6 +16,8 @@ import { LoadingState, useThreeJSReady } from './components/LoadingState';
 import { ContextMenu, useContextMenu } from './components/ContextMenu';
 import { LandingExperience } from './components/LandingExperience';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { CameraController } from './components/CameraController';
+import { ImmersiveMode } from './components/ImmersiveMode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
 import { useReducedMotion } from './hooks/useReducedMotion';
@@ -25,11 +27,25 @@ import './App.css';
 
 function App() {
   const cameraDistance = useStore((s) => s.cameraDistance);
+  const isImmersiveMode = useStore((s) => s.isImmersiveMode);
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitControlsRef = useRef<any>(null);
   const isReady = useThreeJSReady();
   const reducedMotion = useReducedMotion();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
+  
+  // Update body class for immersive mode
+  useEffect(() => {
+    if (isImmersiveMode) {
+      document.body.classList.add('immersive-mode');
+    } else {
+      document.body.classList.remove('immersive-mode');
+    }
+    
+    return () => {
+      document.body.classList.remove('immersive-mode');
+    };
+  }, [isImmersiveMode]);
 
   useKeyboardShortcuts();
   useDrag4D(containerRef);
@@ -180,6 +196,7 @@ function App() {
               RIGHT: undefined as unknown as THREE.MOUSE,
             }}
           />
+          <CameraController orbitControlsRef={orbitControlsRef} />
         </Canvas>
       </ErrorBoundary>
       </main>
@@ -198,6 +215,7 @@ function App() {
         onClose={hideContextMenu} 
       />
       <LandingExperience />
+      <ImmersiveMode />
       
       {/* Live region for screen reader announcements */}
       <div
