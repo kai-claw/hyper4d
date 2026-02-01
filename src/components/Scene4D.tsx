@@ -14,16 +14,37 @@ import {
   projectPerspective4Dto3D,
   projectOrthographic4Dto3D,
   projectStereographic4Dto3D,
+  vec4,
 } from '../engine/math4d';
 
-// Map W-coordinate to color (blue = near, red = far in 4th dimension)
+// Enhanced W-depth to color mapping with premium gradients
 function wToColor(w: number, minW: number, maxW: number): THREE.Color {
   const range = maxW - minW || 1;
-  const t = (w - minW) / range;
-  const r = t < 0.5 ? t * 2 : 1;
-  const g = t < 0.5 ? t * 2 : 2 - t * 2;
-  const b = t < 0.5 ? 1 : 2 - t * 2;
-  return new THREE.Color(r, g, b);
+  const t = Math.max(0, Math.min(1, (w - minW) / range));
+  
+  // Premium color palette: deep blue → cyan → magenta → gold
+  if (t < 0.33) {
+    const s = t / 0.33;
+    return new THREE.Color().lerpColors(
+      new THREE.Color(0x0a1a3d), // Deep midnight blue
+      new THREE.Color(0x00bcd4), // Cyan
+      s
+    );
+  } else if (t < 0.67) {
+    const s = (t - 0.33) / 0.34;
+    return new THREE.Color().lerpColors(
+      new THREE.Color(0x00bcd4), // Cyan
+      new THREE.Color(0xe91e63), // Magenta
+      s
+    );
+  } else {
+    const s = (t - 0.67) / 0.33;
+    return new THREE.Color().lerpColors(
+      new THREE.Color(0xe91e63), // Magenta
+      new THREE.Color(0xffc107), // Gold
+      s
+    );
+  }
 }
 
 export function Scene4D() {
@@ -35,10 +56,13 @@ export function Scene4D() {
     edgeOpacity, vertexSize,
     showSlice, wSlicePosition, wSliceThickness,
     colorByW,
+    updateAnimations,
   } = useStore();
 
   const rotationRef = useRef({ ...rotation });
   const groupRef = useRef<THREE.Group>(null);
+  const shapeTransitionRef = useRef({ progress: 1, fromShape: null as any, toShape: null as any });
+  const lastActiveShapeRef = useRef(activeShape);
   const lastUpdateRef = useRef({
     rotation: { ...rotation },
     projectionMode,
@@ -49,10 +73,22 @@ export function Scene4D() {
     colorByW,
   });
 
-  // Get the current shape
+  // Get the current shape with morphing support
   const shape = useMemo(() => {
-    const key = activeShape;
-    return SHAPE_CATALOG[key].create(1);
+    const newShape = SHAPE_CATALOG[activeShape].create(1);
+    
+    // Start shape transition animation
+    if (lastActiveShapeRef.current !== activeShape) {
+      const oldShape = SHAPE_CATALOG[lastActiveShapeRef.current].create(1);
+      shapeTransitionRef.current = {
+        progress: 0,
+        fromShape: oldShape,
+        toShape: newShape,
+      };
+      lastActiveShapeRef.current = activeShape;
+    }
+    
+    return newShape;
   }, [activeShape]);
 
   // Project a 4D point to 3D based on projection mode
@@ -70,11 +106,20 @@ export function Scene4D() {
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
+    // Update smooth parameter animations
+    updateAnimations(delta);
+
     // Check if anything that affects the geometry has changed
     const last = lastUpdateRef.current;
     let needsUpdate = false;
 
-    // Update auto-rotation
+    // Update shape transition animation
+    if (shapeTransitionRef.current.progress < 1) {
+      shapeTransitionRef.current.progress = Math.min(1, shapeTransitionRef.current.progress + delta * 2.5);
+      needsUpdate = true;
+    }
+
+    // Update auto-rotation with smoother interpolation
     if (isAutoRotating) {
       rotationRef.current.xy += autoRotation.xy * delta;
       rotationRef.current.xz += autoRotation.xz * delta;
@@ -138,8 +183,28 @@ export function Scene4D() {
       rotateZW(totalR.zw),
     );
 
+    // Get vertices (possibly morphed between shapes)
+    let currentVertices = shape.vertices;
+    if (shapeTransitionRef.current.progress < 1 && shapeTransitionRef.current.fromShape) {
+      const t = shapeTransitionRef.current.progress;
+      const easeT = t * t * (3 - 2 * t); // Smooth step easing
+      const fromShape = shapeTransitionRef.current.fromShape;
+      const toShape = shapeTransitionRef.current.toShape;
+      
+      // Morph vertices between shapes (interpolate positions)
+      currentVertices = toShape.vertices.map((toV: Vec4, i: number) => {
+        const fromV = fromShape.vertices[i] || toV; // Use toV if fromShape has fewer vertices
+        return vec4(
+          fromV[0] + (toV[0] - fromV[0]) * easeT,
+          fromV[1] + (toV[1] - fromV[1]) * easeT,
+          fromV[2] + (toV[2] - fromV[2]) * easeT,
+          fromV[3] + (toV[3] - fromV[3]) * easeT,
+        );
+      });
+    }
+
     // Transform all vertices
-    const transformed: Vec4[] = shape.vertices.map((v: Vec4) => mulMatVec4(rotMatrix, v));
+    const transformed: Vec4[] = currentVertices.map((v: Vec4) => mulMatVec4(rotMatrix, v));
     const projected: Vec3[] = transformed.map((v: Vec4) => project(v));
 
     // W range for color
@@ -229,28 +294,73 @@ export function Scene4D() {
 
   return (
     <group ref={groupRef}>
-      {/* Edges as LineSegments */}
+      {/* Edges with glow effect */}
       <lineSegments geometry={linesGeo}>
         <lineBasicMaterial
           vertexColors
           transparent
           opacity={edgeOpacity}
+          linewidth={2}
+          toneMapped={false}
+        />
+      </lineSegments>
+      
+      {/* Second layer for glow effect */}
+      <lineSegments geometry={linesGeo}>
+        <lineBasicMaterial
+          vertexColors
+          transparent
+          opacity={edgeOpacity * 0.3}
+          linewidth={4}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
         />
       </lineSegments>
 
-      {/* Vertices */}
+      {/* Vertices with enhanced glow */}
       <group>
         {shape.vertices.map((_: Vec4, i: number) => (
-          <mesh key={`vert-${activeShape}-${i}`}>
-            <sphereGeometry args={[0.06, 12, 12]} />
-            <meshStandardMaterial
-              color={shape.color}
-              emissive={shape.color}
-              emissiveIntensity={0.3}
-            />
-          </mesh>
+          <group key={`vert-${activeShape}-${i}`}>
+            {/* Main vertex */}
+            <mesh>
+              <sphereGeometry args={[0.06, 16, 16]} />
+              <meshStandardMaterial
+                color={shape.color}
+                emissive={shape.color}
+                emissiveIntensity={0.4}
+                metalness={0.1}
+                roughness={0.2}
+                toneMapped={false}
+              />
+            </mesh>
+            {/* Glow halo */}
+            <mesh>
+              <sphereGeometry args={[0.09, 12, 12]} />
+              <meshBasicMaterial
+                color={shape.color}
+                transparent
+                opacity={0.2}
+                blending={THREE.AdditiveBlending}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
         ))}
       </group>
+
+      {/* 4D Cross-section plane visualization */}
+      {showSlice && (
+        <mesh position={[0, 0, wSlicePosition * 2]}>
+          <planeGeometry args={[4, 4]} />
+          <meshBasicMaterial
+            color="#4fc3f7"
+            transparent
+            opacity={0.15}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
 
       {/* 3D Axes */}
       {showAxes && (
@@ -258,6 +368,15 @@ export function Scene4D() {
           <arrowHelper args={[new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 1.5, 0xff4444]} />
           <arrowHelper args={[new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1.5, 0x44ff44]} />
           <arrowHelper args={[new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 1.5, 0x4444ff]} />
+          {/* W-axis indicator */}
+          <mesh position={[2, 2, 0]}>
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshBasicMaterial 
+              color="#ab47bc"
+              emissive="#ab47bc"
+              emissiveIntensity={0.5}
+            />
+          </mesh>
         </group>
       )}
     </group>

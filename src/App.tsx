@@ -8,6 +8,7 @@ import { InfoPanel } from './components/InfoPanel';
 import { HelpModal } from './components/HelpModal';
 import { GridFloor } from './components/GridFloor';
 import { TutorialOverlay } from './components/TutorialOverlay';
+import { TourMode } from './components/TourMode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
 import { useStore } from './store/useStore';
@@ -33,15 +34,16 @@ function App() {
         <ambientLight intensity={0.4} />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
         <pointLight position={[-10, -10, -10]} intensity={0.3} />
-        <Stars radius={50} depth={40} count={2000} factor={3} fade speed={0.5} />
+        <Stars radius={50} depth={40} count={3000} factor={4} fade speed={0.3} />
         <Scene4D />
         <GridFloor />
         <OrbitControls
           enablePan={false}
           minDistance={2}
           maxDistance={20}
-          dampingFactor={0.08}
+          dampingFactor={0.05}
           enableDamping
+          autoRotateSpeed={0.5}
           // Disable right-click orbit so right-drag can do 4D rotation
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
@@ -49,11 +51,13 @@ function App() {
             RIGHT: undefined as unknown as THREE.MOUSE,
           }}
         />
+        {/* Enhanced background with more stars */}
       </Canvas>
       <Controls />
       <InfoPanel />
       <HelpModal />
       <TutorialOverlay />
+      <TourMode />
     </div>
   );
 }

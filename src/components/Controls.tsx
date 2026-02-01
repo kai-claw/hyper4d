@@ -23,12 +23,23 @@ const PROJECTION_MODES: { value: ProjectionMode; label: string; desc: string }[]
 
 export function Controls() {
   const store = useStore();
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
   return (
-    <div className="controls">
-      <div className="controls-header">
+    <div className={`controls ${isMobileExpanded ? 'expanded' : ''}`}>
+      <div 
+        className="controls-header"
+        onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+      >
         <h2>⚡ Hyper4D</h2>
-        <button className="btn-icon" onClick={store.toggleHelp} title="Help">
+        <button 
+          className="btn-icon" 
+          onClick={(e) => {
+            e.stopPropagation();
+            store.toggleHelp();
+          }} 
+          title="Help"
+        >
           ?
         </button>
       </div>
@@ -216,9 +227,14 @@ export function Controls() {
       </Section>
 
       <div className="controls-footer">
-        <button className="btn-small" onClick={store.toggleInfo}>
-          {store.showInfo ? 'Hide' : 'Show'} Info Panel
-        </button>
+        <div className="footer-buttons">
+          <button className="btn-small btn-tour" onClick={store.startTour}>
+            🎯 Start Tour
+          </button>
+          <button className="btn-small" onClick={store.toggleInfo}>
+            {store.showInfo ? 'Hide' : 'Show'} Info Panel
+          </button>
+        </div>
         <div className="hint-text">
           <span>Shift+Drag or Right-Drag → 4D rotation</span>
           <span>Press <strong>H</strong> for all shortcuts</span>
