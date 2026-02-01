@@ -1,5 +1,6 @@
 // Control panel for 4D manipulation
 
+import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { ProjectionMode } from '../store/useStore';
 import { SHAPE_CATALOG } from '../engine/shapes4d';
@@ -46,13 +47,15 @@ export function Controls() {
 
       {/* Shape selector */}
       <Section title="Shape">
-        <div className="shape-grid">
+        <div className="shape-grid" role="group" aria-label="4D shape selection">
           {(Object.entries(SHAPE_CATALOG) as [ShapeKey, typeof SHAPE_CATALOG[ShapeKey]][]).map(
             ([key, { label }]) => (
               <button
                 key={key}
                 className={`shape-btn ${store.activeShape === key ? 'active' : ''}`}
                 onClick={() => store.setActiveShape(key)}
+                aria-pressed={store.activeShape === key}
+                aria-label={`Select ${label} shape`}
               >
                 {label}
               </button>
@@ -69,18 +72,30 @@ export function Controls() {
           </div>
           {ROTATION_PLANES.map(({ key, label, desc }) => (
             <div key={key} className="slider-row" title={desc}>
-              <label className={key.includes('w') ? 'label-4d' : ''}>
+              <label 
+                htmlFor={`rotation-${key}`}
+                className={key.includes('w') ? 'label-4d' : ''}
+              >
                 {label}
               </label>
               <input
+                id={`rotation-${key}`}
                 type="range"
                 min={-Math.PI}
                 max={Math.PI}
                 step={0.01}
                 value={store.rotation[key]}
                 onChange={(e) => store.setRotation(key, parseFloat(e.target.value))}
+                aria-label={`${label} rotation: ${desc}`}
+                aria-describedby={`rotation-${key}-value`}
               />
-              <span className="value">{(store.rotation[key] * 180 / Math.PI).toFixed(0)}°</span>
+              <span 
+                id={`rotation-${key}-value`}
+                className="value"
+                aria-label={`Current rotation: ${(store.rotation[key] * 180 / Math.PI).toFixed(0)} degrees`}
+              >
+                {(store.rotation[key] * 180 / Math.PI).toFixed(0)}°
+              </span>
             </div>
           ))}
           <button className="btn-small" onClick={store.resetRotation}>
@@ -317,5 +332,3 @@ function Section({
   );
 }
 
-// Need to import useState
-import { useState } from 'react';

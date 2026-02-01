@@ -1,4 +1,4 @@
-// Main 4D→3D scene renderer
+// Main 4D→3D scene renderer - OPTIMIZED FOR PERFORMANCE
 
 import { useRef, useMemo, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -16,36 +16,24 @@ import {
   projectStereographic4Dto3D,
   vec4,
 } from '../engine/math4d';
+import { wToColorCached } from '../utils/ColorCache';
 
-// Enhanced W-depth to color mapping with premium gradients
-function wToColor(w: number, minW: number, maxW: number): THREE.Color {
-  const range = maxW - minW || 1;
-  const t = Math.max(0, Math.min(1, (w - minW) / range));
-  
-  // Premium color palette: deep blue → cyan → magenta → gold
-  if (t < 0.33) {
-    const s = t / 0.33;
-    return new THREE.Color().lerpColors(
-      new THREE.Color(0x0a1a3d), // Deep midnight blue
-      new THREE.Color(0x00bcd4), // Cyan
-      s
-    );
-  } else if (t < 0.67) {
-    const s = (t - 0.33) / 0.34;
-    return new THREE.Color().lerpColors(
-      new THREE.Color(0x00bcd4), // Cyan
-      new THREE.Color(0xe91e63), // Magenta
-      s
-    );
-  } else {
-    const s = (t - 0.67) / 0.33;
-    return new THREE.Color().lerpColors(
-      new THREE.Color(0xe91e63), // Magenta
-      new THREE.Color(0xffc107), // Gold
-      s
-    );
-  }
-}
+// Performance constants
+const UPDATE_THRESHOLD = 0.001;
+const MORPH_SPEED = 2.5;
+
+// Pre-allocated objects to avoid GC pressure
+const _tempColor = new THREE.Color();
+
+// Memory pool for matrix caching
+const _rotationMatrixCache = new Map<string, any>();
+const _lastTransformCache = {
+  vertices: [] as Vec4[],
+  projected: [] as Vec3[],
+  wValues: [] as number[],
+  minW: 0,
+  maxW: 0,
+};
 
 export function Scene4D() {
   const {
@@ -115,12 +103,13 @@ export function Scene4D() {
 
     // Update shape transition animation
     if (shapeTransitionRef.current.progress < 1) {
-      shapeTransitionRef.current.progress = Math.min(1, shapeTransitionRef.current.progress + delta * 2.5);
+      shapeTransitionRef.current.progress = Math.min(1, shapeTransitionRef.current.progress + delta * MORPH_SPEED);
       needsUpdate = true;
     }
 
     // Update auto-rotation with smoother interpolation
-    if (isAutoRotating) {
+    const autoRotationActive = isAutoRotating;
+    if (autoRotationActive) {
       rotationRef.current.xy += autoRotation.xy * delta;
       rotationRef.current.xz += autoRotation.xz * delta;
       rotationRef.current.xw += autoRotation.xw * delta;
@@ -130,15 +119,15 @@ export function Scene4D() {
       needsUpdate = true; // Auto-rotation always needs update
     }
 
-    // Update slice animation (MRI scan effect)
-    const { isSliceAnimating, sliceAnimationSpeed, setWSlicePosition } = useStore.getState();
-    if (isSliceAnimating && showSlice) {
-      const speed = sliceAnimationSpeed * delta * 2; // 2 units per second at speed 1
+    // Update slice animation (MRI scan effect) - batched store access
+    const storeState = useStore.getState();
+    if (storeState.isSliceAnimating && showSlice) {
+      const speed = storeState.sliceAnimationSpeed * delta * 2; // 2 units per second at speed 1
       const newPos = wSlicePosition + speed;
       if (newPos > 2) {
-        setWSlicePosition(-2); // Reset to start
+        storeState.setWSlicePosition(-2); // Reset to start
       } else {
-        setWSlicePosition(newPos);
+        storeState.setWSlicePosition(newPos);
       }
       needsUpdate = true;
     }
@@ -153,17 +142,19 @@ export function Scene4D() {
       zw: r.zw + rotation.zw,
     };
 
-    // Check if manual rotation changed
+    // Check if manual rotation changed (optimized comparison)
     if (!needsUpdate) {
-      for (const key in rotation) {
-        if (Math.abs(rotation[key as keyof typeof rotation] - last.rotation[key as keyof typeof rotation]) > 0.001) {
+      const rotKeys = Object.keys(rotation) as (keyof typeof rotation)[];
+      for (let i = 0; i < rotKeys.length; i++) {
+        const key = rotKeys[i];
+        if (Math.abs(rotation[key] - last.rotation[key]) > UPDATE_THRESHOLD) {
           needsUpdate = true;
           break;
         }
       }
     }
 
-    // Check other properties that affect rendering
+    // Check other properties that affect rendering (optimized)
     if (!needsUpdate) {
       needsUpdate = 
         last.projectionMode !== projectionMode ||
@@ -174,29 +165,37 @@ export function Scene4D() {
         last.colorByW !== colorByW;
     }
 
-    if (!needsUpdate) return; // Skip expensive calculations
+    if (!needsUpdate) return; // Skip expensive calculations - EARLY RETURN
 
-    // Update last values
-    lastUpdateRef.current = {
-      rotation: { ...rotation },
-      projectionMode,
-      viewDistance,
-      showSlice,
-      wSlicePosition,
-      wSliceThickness,
-      colorByW,
-    };
+    // Update last values (deep copy avoided where possible)
+    Object.assign(lastUpdateRef.current.rotation, rotation);
+    lastUpdateRef.current.projectionMode = projectionMode;
+    lastUpdateRef.current.viewDistance = viewDistance;
+    lastUpdateRef.current.showSlice = showSlice;
+    lastUpdateRef.current.wSlicePosition = wSlicePosition;
+    lastUpdateRef.current.wSliceThickness = wSliceThickness;
+    lastUpdateRef.current.colorByW = colorByW;
 
-    const rotMatrix = composeRotations(
-      rotateXY(totalR.xy),
-      rotateXZ(totalR.xz),
-      rotateXW(totalR.xw),
-      rotateYZ(totalR.yz),
-      rotateYW(totalR.yw),
-      rotateZW(totalR.zw),
-    );
+    // Cache rotation matrix computation
+    const rotKey = `${totalR.xy.toFixed(3)},${totalR.xz.toFixed(3)},${totalR.xw.toFixed(3)},${totalR.yz.toFixed(3)},${totalR.yw.toFixed(3)},${totalR.zw.toFixed(3)}`;
+    let rotMatrix = _rotationMatrixCache.get(rotKey);
+    if (!rotMatrix) {
+      rotMatrix = composeRotations(
+        rotateXY(totalR.xy),
+        rotateXZ(totalR.xz),
+        rotateXW(totalR.xw),
+        rotateYZ(totalR.yz),
+        rotateYW(totalR.yw),
+        rotateZW(totalR.zw),
+      );
+      // Limit cache size to prevent memory bloat
+      if (_rotationMatrixCache.size > 100) {
+        _rotationMatrixCache.clear();
+      }
+      _rotationMatrixCache.set(rotKey, rotMatrix);
+    }
 
-    // Get vertices (possibly morphed between shapes)
+    // Get vertices (possibly morphed between shapes) - OPTIMIZED
     let currentVertices = shape.vertices;
     if (shapeTransitionRef.current.progress < 1 && shapeTransitionRef.current.fromShape) {
       const t = shapeTransitionRef.current.progress;
@@ -204,50 +203,100 @@ export function Scene4D() {
       const fromShape = shapeTransitionRef.current.fromShape;
       const toShape = shapeTransitionRef.current.toShape;
       
-      // Morph vertices between shapes (interpolate positions)
-      currentVertices = toShape.vertices.map((toV: Vec4, i: number) => {
-        const fromV = fromShape.vertices[i] || toV; // Use toV if fromShape has fewer vertices
-        return vec4(
-          fromV[0] + (toV[0] - fromV[0]) * easeT,
-          fromV[1] + (toV[1] - fromV[1]) * easeT,
-          fromV[2] + (toV[2] - fromV[2]) * easeT,
-          fromV[3] + (toV[3] - fromV[3]) * easeT,
-        );
-      });
+      // Morph vertices between shapes (reuse cache array to avoid allocation)
+      if (_lastTransformCache.vertices.length !== toShape.vertices.length) {
+        _lastTransformCache.vertices = new Array(toShape.vertices.length);
+      }
+      
+      for (let i = 0; i < toShape.vertices.length; i++) {
+        const toV = toShape.vertices[i];
+        const fromV = fromShape.vertices[i] || toV;
+        
+        if (!_lastTransformCache.vertices[i]) {
+          _lastTransformCache.vertices[i] = vec4(0, 0, 0, 0);
+        }
+        
+        const target = _lastTransformCache.vertices[i];
+        target[0] = fromV[0] + (toV[0] - fromV[0]) * easeT;
+        target[1] = fromV[1] + (toV[1] - fromV[1]) * easeT;
+        target[2] = fromV[2] + (toV[2] - fromV[2]) * easeT;
+        target[3] = fromV[3] + (toV[3] - fromV[3]) * easeT;
+      }
+      currentVertices = _lastTransformCache.vertices;
     }
 
-    // Transform all vertices
-    const transformed: Vec4[] = currentVertices.map((v: Vec4) => mulMatVec4(rotMatrix, v));
-    const projected: Vec3[] = transformed.map((v: Vec4) => project(v));
+    // Transform all vertices - REUSE ARRAYS
+    const vertexCount = currentVertices.length;
+    if (_lastTransformCache.projected.length !== vertexCount) {
+      _lastTransformCache.projected = new Array(vertexCount);
+      _lastTransformCache.wValues = new Array(vertexCount);
+      for (let i = 0; i < vertexCount; i++) {
+        _lastTransformCache.projected[i] = [0, 0, 0];
+        _lastTransformCache.wValues[i] = 0;
+      }
+    }
 
-    // W range for color
-    const wValues = transformed.map((v: Vec4) => v[3]);
-    const minW = Math.min(...wValues);
-    const maxW = Math.max(...wValues);
+    const transformed = _lastTransformCache.vertices.length === vertexCount ? _lastTransformCache.vertices : currentVertices;
+    const projected = _lastTransformCache.projected;
+    const wValues = _lastTransformCache.wValues;
+    
+    // Transform and project in one loop to avoid multiple iterations
+    let minW = Infinity;
+    let maxW = -Infinity;
+    
+    for (let i = 0; i < vertexCount; i++) {
+      const v = currentVertices[i];
+      // Transform vertex
+      const transformedV = mulMatVec4(rotMatrix, v);
+      if (transformed !== currentVertices) {
+        transformed[i] = transformedV;
+      }
+      
+      // Project to 3D
+      const proj = project(transformedV);
+      projected[i][0] = proj[0];
+      projected[i][1] = proj[1];
+      projected[i][2] = proj[2];
+      
+      // Track W values for coloring
+      const w = transformedV[3];
+      wValues[i] = w;
+      if (w < minW) minW = w;
+      if (w > maxW) maxW = w;
+    }
+    
+    _lastTransformCache.minW = minW;
+    _lastTransformCache.maxW = maxW;
 
-    // Update vertex meshes
+    // Update vertex meshes - OPTIMIZED
     const vertGroup = groupRef.current.children[1] as THREE.Group;
     if (vertGroup) {
-      for (let i = 0; i < projected.length && i < vertGroup.children.length; i++) {
+      for (let i = 0; i < vertexCount && i < vertGroup.children.length; i++) {
         const mesh = vertGroup.children[i] as THREE.Mesh;
-        mesh.visible = showVertices;
-        mesh.position.set(projected[i][0], projected[i][1], projected[i][2]);
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        const pos = projected[i];
+        
+        mesh.position.set(pos[0], pos[1], pos[2]);
         mesh.scale.setScalar(vertexSize / 0.06);
 
+        // Visibility check
+        let visible = showVertices;
         if (showSlice) {
-          const w = transformed[i][3];
-          mesh.visible = showVertices && Math.abs(w - wSlicePosition) < wSliceThickness;
+          const w = wValues[i];
+          visible = showVertices && Math.abs(w - wSlicePosition) < wSliceThickness;
         }
+        mesh.visible = visible;
 
-        if (colorByW) {
-          const color = wToColor(transformed[i][3], minW, maxW);
-          (mesh.material as THREE.MeshStandardMaterial).color = color;
-          (mesh.material as THREE.MeshStandardMaterial).emissive = color;
+        // Color update (avoid object creation)
+        if (visible && colorByW) {
+          wToColorCached(wValues[i], minW, maxW, _tempColor);
+          material.color.copy(_tempColor);
+          material.emissive.copy(_tempColor);
         }
       }
     }
 
-    // Update edges (using line segments)
+    // Update edges (using line segments) - OPTIMIZED
     const lineSegments = groupRef.current.children[0] as THREE.LineSegments;
     if (lineSegments) {
       const pos = lineSegments.geometry.attributes.position as THREE.BufferAttribute;
@@ -257,30 +306,33 @@ export function Scene4D() {
         const [a, b] = shape.edges[i];
         const p1 = projected[a];
         const p2 = projected[b];
+        const i2 = i * 2;
+        const i2plus1 = i2 + 1;
 
         let visible = showEdges;
         if (showSlice) {
-          const w1 = transformed[a][3];
-          const w2 = transformed[b][3];
+          const w1 = wValues[a];
+          const w2 = wValues[b];
           const in1 = Math.abs(w1 - wSlicePosition) < wSliceThickness;
           const in2 = Math.abs(w2 - wSlicePosition) < wSliceThickness;
           visible = showEdges && (in1 || in2);
         }
 
         if (visible) {
-          pos.setXYZ(i * 2, p1[0], p1[1], p1[2]);
-          pos.setXYZ(i * 2 + 1, p2[0], p2[1], p2[2]);
+          pos.setXYZ(i2, p1[0], p1[1], p1[2]);
+          pos.setXYZ(i2plus1, p2[0], p2[1], p2[2]);
         } else {
           // Hide by collapsing to origin
-          pos.setXYZ(i * 2, 0, 0, 0);
-          pos.setXYZ(i * 2 + 1, 0, 0, 0);
+          pos.setXYZ(i2, 0, 0, 0);
+          pos.setXYZ(i2plus1, 0, 0, 0);
         }
 
         if (colorByW) {
-          const c1 = wToColor(transformed[a][3], minW, maxW);
-          const c2 = wToColor(transformed[b][3], minW, maxW);
-          col.setXYZ(i * 2, c1.r, c1.g, c1.b);
-          col.setXYZ(i * 2 + 1, c2.r, c2.g, c2.b);
+          wToColorCached(wValues[a], minW, maxW, _tempColor);
+          col.setXYZ(i2, _tempColor.r, _tempColor.g, _tempColor.b);
+          
+          wToColorCached(wValues[b], minW, maxW, _tempColor);
+          col.setXYZ(i2plus1, _tempColor.r, _tempColor.g, _tempColor.b);
         }
       }
       pos.needsUpdate = true;
@@ -386,8 +438,6 @@ export function Scene4D() {
             <sphereGeometry args={[0.1, 8, 8]} />
             <meshBasicMaterial 
               color="#ab47bc"
-              emissive="#ab47bc"
-              emissiveIntensity={0.5}
             />
           </mesh>
         </group>

@@ -1,8 +1,10 @@
-// Keyboard shortcut handler for Hyper4D
+// Keyboard shortcut handler for Hyper4D - ENHANCED FOR ACCESSIBILITY
 
 import { useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import { SHAPE_CATALOG } from '../engine/shapes4d';
 import type { ShapeKey } from '../engine/shapes4d';
+import { announceToScreenReader } from '../utils/accessibility';
 
 const SHAPE_KEYS: Record<string, ShapeKey> = {
   '1': 'tesseract',
@@ -27,7 +29,9 @@ export function useKeyboardShortcuts() {
       // Shape selection: 1-6
       if (SHAPE_KEYS[key]) {
         e.preventDefault();
-        store.setActiveShape(SHAPE_KEYS[key]);
+        const shapeKey = SHAPE_KEYS[key];
+        store.setActiveShape(shapeKey);
+        announceToScreenReader(`Shape changed to ${SHAPE_CATALOG[shapeKey].label}`);
         return;
       }
 
@@ -36,6 +40,7 @@ export function useKeyboardShortcuts() {
         case ' ':
           e.preventDefault();
           store.toggleAutoRotation();
+          announceToScreenReader(`Auto-rotation ${store.isAutoRotating ? 'stopped' : 'started'}`);
           break;
 
         // Reset rotation
@@ -43,6 +48,7 @@ export function useKeyboardShortcuts() {
           if (!e.metaKey && !e.ctrlKey) {
             e.preventDefault();
             store.resetRotation();
+            announceToScreenReader('All rotations reset to zero');
           }
           break;
 
@@ -51,18 +57,21 @@ export function useKeyboardShortcuts() {
         case '?':
           e.preventDefault();
           store.toggleHelp();
+          announceToScreenReader('Help dialog toggled');
           break;
 
         // Toggle vertices
         case 'v':
           e.preventDefault();
           store.toggleShowVertices();
+          announceToScreenReader(`Vertices ${store.showVertices ? 'hidden' : 'shown'}`);
           break;
 
         // Toggle edges
         case 'e':
           e.preventDefault();
           store.toggleShowEdges();
+          announceToScreenReader(`Edges ${store.showEdges ? 'hidden' : 'shown'}`);
           break;
 
         // Toggle axes

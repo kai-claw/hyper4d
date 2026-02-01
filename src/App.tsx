@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -11,19 +11,36 @@ import { TutorialOverlay } from './components/TutorialOverlay';
 import { TourMode } from './components/TourMode';
 import { LearnMode } from './components/LearnMode';
 import { ComparisonMode } from './components/ComparisonMode';
+import { FPSToggle } from './components/FPSCounter';
+import { LoadingState, useThreeJSReady } from './components/LoadingState';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
+import { useReducedMotion } from './hooks/useReducedMotion';
 import { useStore } from './store/useStore';
 
 function App() {
   const cameraDistance = useStore((s) => s.cameraDistance);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isReady = useThreeJSReady();
+  const reducedMotion = useReducedMotion();
 
   useKeyboardShortcuts();
   useDrag4D(containerRef);
 
+  // Apply reduced motion preferences
+  useEffect(() => {
+    if (reducedMotion) {
+      // Disable auto-rotation if user prefers reduced motion
+      const { isAutoRotating, toggleAutoRotation } = useStore.getState();
+      if (isAutoRotating) {
+        toggleAutoRotation();
+      }
+    }
+  }, [reducedMotion]);
+
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', background: '#0a0a14' }}>
+      <LoadingState isLoading={!isReady} />
       <Canvas
         camera={{
           position: [0, 0, cameraDistance],
@@ -62,6 +79,7 @@ function App() {
       <TourMode />
       <LearnMode />
       <ComparisonMode />
+      <FPSToggle />
     </div>
   );
 }

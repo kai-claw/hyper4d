@@ -153,8 +153,17 @@ export function rotateZW(angle: number): Mat4x4 {
 
 // === Projection: 4D → 3D ===
 
-// Perspective projection from 4D to 3D
-// viewDistance: distance of the camera along the W axis
+/**
+ * Perspective projection from 4D to 3D space.
+ * 
+ * This function simulates a 4D camera looking at a 4D object from a distance
+ * along the W axis, similar to how a 3D camera projects 3D objects to 2D.
+ * Objects farther in W appear smaller, closer objects appear larger.
+ * 
+ * @param point - The 4D point to project [x, y, z, w]
+ * @param viewDistance - Distance of the 4D camera along the W axis
+ * @returns Projected 3D point [x', y', z']
+ */
 export function projectPerspective4Dto3D(
   point: Vec4,
   viewDistance: number = 3

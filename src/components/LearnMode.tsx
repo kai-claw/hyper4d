@@ -162,7 +162,7 @@ const LEARNING_MODULES: LearningModule[] = [
 ];
 
 export function LearnMode() {
-  const { showLearnMode, learnModuleId, learnStep, setLearnMode } = useStore();
+  const { showLearnMode, learnModuleId, setLearnMode } = useStore();
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 

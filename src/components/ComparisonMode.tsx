@@ -1,8 +1,6 @@
 // Side-by-side comparison of 3D analogue vs 4D shape
-
-import { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useStore } from '../store/useStore';
 import { Scene4D } from './Scene4D';
@@ -109,14 +107,20 @@ function Icosahedron3D({ size = 1 }: { size?: number }) {
 function NoAnalogue() {
   return (
     <group>
-      <mesh position={[0, 0.5, 0]}>
-        <textGeometry args={['NO 3D', { size: 0.3, height: 0.05 }]} />
-        <meshStandardMaterial color="#ff6b6b" />
-      </mesh>
-      <mesh position={[0, -0.5, 0]}>
-        <textGeometry args={['ANALOGUE', { size: 0.2, height: 0.05 }]} />
-        <meshStandardMaterial color="#ff6b6b" />
-      </mesh>
+      <Text
+        position={[0, 0.5, 0]}
+        fontSize={0.3}
+        color="#ff6b6b"
+      >
+        NO 3D
+      </Text>
+      <Text
+        position={[0, -0.5, 0]}
+        fontSize={0.2}
+        color="#ff6b6b"
+      >
+        ANALOGUE
+      </Text>
       <mesh position={[0, 0, 0]}>
         <sphereGeometry args={[0.1, 8, 6]} />
         <meshStandardMaterial 
@@ -146,7 +150,6 @@ function get3DComponent(shapeKey: string) {
 export function ComparisonMode() {
   const { showComparison, activeShape } = useStore();
   const cameraDistance = useStore((s) => s.cameraDistance);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   if (!showComparison) return null;
 

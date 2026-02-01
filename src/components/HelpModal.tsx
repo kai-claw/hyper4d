@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useStore } from '../store/useStore';
+import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 import './HelpModal.css';
 
 export function HelpModal() {
   const { showHelp, toggleHelp } = useStore();
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   if (!showHelp) return null;
 
@@ -73,6 +76,22 @@ export function HelpModal() {
               <div className="shortcut"><kbd>H</kbd> This help</div>
             </div>
           </div>
+          <button 
+            className="btn-shortcuts" 
+            onClick={() => setShowShortcuts(true)}
+            style={{
+              marginTop: '12px',
+              background: 'rgba(79, 195, 247, 0.1)',
+              border: '1px solid rgba(79, 195, 247, 0.3)',
+              color: '#4fc3f7',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            📋 View All Shortcuts
+          </button>
         </div>
 
         <div className="help-section">
@@ -121,6 +140,11 @@ export function HelpModal() {
           </button>
         </div>
       </div>
+      
+      <KeyboardShortcutsHelp 
+        visible={showShortcuts} 
+        onClose={() => setShowShortcuts(false)} 
+      />
     </div>
   );
 }
