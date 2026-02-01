@@ -39,6 +39,15 @@ export function Scene4D() {
 
   const rotationRef = useRef({ ...rotation });
   const groupRef = useRef<THREE.Group>(null);
+  const lastUpdateRef = useRef({
+    rotation: { ...rotation },
+    projectionMode,
+    viewDistance,
+    showSlice,
+    wSlicePosition,
+    wSliceThickness,
+    colorByW,
+  });
 
   // Get the current shape
   const shape = useMemo(() => {
@@ -61,6 +70,10 @@ export function Scene4D() {
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
+    // Check if anything that affects the geometry has changed
+    const last = lastUpdateRef.current;
+    let needsUpdate = false;
+
     // Update auto-rotation
     if (isAutoRotating) {
       rotationRef.current.xy += autoRotation.xy * delta;
@@ -69,6 +82,7 @@ export function Scene4D() {
       rotationRef.current.yz += autoRotation.yz * delta;
       rotationRef.current.yw += autoRotation.yw * delta;
       rotationRef.current.zw += autoRotation.zw * delta;
+      needsUpdate = true; // Auto-rotation always needs update
     }
 
     const r = rotationRef.current;
@@ -79,6 +93,40 @@ export function Scene4D() {
       yz: r.yz + rotation.yz,
       yw: r.yw + rotation.yw,
       zw: r.zw + rotation.zw,
+    };
+
+    // Check if manual rotation changed
+    if (!needsUpdate) {
+      for (const key in rotation) {
+        if (Math.abs(rotation[key as keyof typeof rotation] - last.rotation[key as keyof typeof rotation]) > 0.001) {
+          needsUpdate = true;
+          break;
+        }
+      }
+    }
+
+    // Check other properties that affect rendering
+    if (!needsUpdate) {
+      needsUpdate = 
+        last.projectionMode !== projectionMode ||
+        Math.abs(last.viewDistance - viewDistance) > 0.01 ||
+        last.showSlice !== showSlice ||
+        Math.abs(last.wSlicePosition - wSlicePosition) > 0.01 ||
+        Math.abs(last.wSliceThickness - wSliceThickness) > 0.01 ||
+        last.colorByW !== colorByW;
+    }
+
+    if (!needsUpdate) return; // Skip expensive calculations
+
+    // Update last values
+    lastUpdateRef.current = {
+      rotation: { ...rotation },
+      projectionMode,
+      viewDistance,
+      showSlice,
+      wSlicePosition,
+      wSliceThickness,
+      colorByW,
     };
 
     const rotMatrix = composeRotations(

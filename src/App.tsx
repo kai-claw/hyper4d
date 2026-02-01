@@ -7,6 +7,7 @@ import { Controls } from './components/Controls';
 import { InfoPanel } from './components/InfoPanel';
 import { HelpModal } from './components/HelpModal';
 import { GridFloor } from './components/GridFloor';
+import { TutorialOverlay } from './components/TutorialOverlay';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useDrag4D } from './components/Drag4D';
 import { useStore } from './store/useStore';
@@ -52,6 +53,7 @@ function App() {
       <Controls />
       <InfoPanel />
       <HelpModal />
+      <TutorialOverlay />
     </div>
   );
 }

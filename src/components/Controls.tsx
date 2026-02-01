@@ -51,8 +51,11 @@ export function Controls() {
       </Section>
 
       {/* 4D Rotation */}
-      <Section title="4D Rotation" collapsible>
+      <Section title="4D Rotation" collapsible defaultOpen={true}>
         <div className="rotation-controls">
+          <div className="rotation-hint">
+            <span>💡 Hold <strong>Shift</strong> and drag on the 3D view for easier 4D rotation</span>
+          </div>
           {ROTATION_PLANES.map(({ key, label, desc }) => (
             <div key={key} className="slider-row" title={desc}>
               <label className={key.includes('w') ? 'label-4d' : ''}>
@@ -70,13 +73,13 @@ export function Controls() {
             </div>
           ))}
           <button className="btn-small" onClick={store.resetRotation}>
-            Reset
+            Reset All
           </button>
         </div>
       </Section>
 
       {/* Auto Rotation */}
-      <Section title="Auto Rotation" collapsible>
+      <Section title="Auto Rotation" collapsible defaultOpen={false}>
         <div className="auto-rotate-toggle">
           <label>
             <input
@@ -84,10 +87,10 @@ export function Controls() {
               checked={store.isAutoRotating}
               onChange={store.toggleAutoRotation}
             />
-            Enable
+            Enable auto-rotation
           </label>
         </div>
-        {ROTATION_PLANES.map(({ key, label }) => (
+        {store.isAutoRotating && ROTATION_PLANES.map(({ key, label }) => (
           <div key={key} className="slider-row">
             <label className={key.includes('w') ? 'label-4d' : ''}>
               {label}
@@ -106,7 +109,7 @@ export function Controls() {
       </Section>
 
       {/* Projection */}
-      <Section title="Projection" collapsible>
+      <Section title="Projection" collapsible defaultOpen={false}>
         <div className="projection-modes">
           {PROJECTION_MODES.map(({ value, label, desc }) => (
             <button
@@ -136,7 +139,7 @@ export function Controls() {
       </Section>
 
       {/* Visual */}
-      <Section title="Display" collapsible>
+      <Section title="Display" collapsible defaultOpen={true}>
         <div className="checkbox-group">
           <label title="V">
             <input type="checkbox" checked={store.showVertices} onChange={store.toggleShowVertices} />
@@ -180,13 +183,16 @@ export function Controls() {
       </Section>
 
       {/* 4D Cross-Section */}
-      <Section title="4D Cross-Section" collapsible>
+      <Section title="4D Cross-Section" collapsible defaultOpen={false}>
         <label className="slice-toggle">
           <input type="checkbox" checked={store.showSlice} onChange={store.toggleShowSlice} />
           Enable W-slice
         </label>
         {store.showSlice && (
           <>
+            <div className="slice-hint">
+              <span>💡 Move the W position to slice through different parts of the 4D object</span>
+            </div>
             <div className="slider-row">
               <label>W pos</label>
               <input
@@ -227,12 +233,14 @@ function Section({
   title,
   children,
   collapsible = false,
+  defaultOpen = true,
 }: {
   title: string;
   children: React.ReactNode;
   collapsible?: boolean;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div className="section">

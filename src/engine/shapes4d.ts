@@ -91,31 +91,41 @@ export function create24Cell(size: number = 1): Shape4D {
   const s = size;
   const vertices: Vec4[] = [];
 
-  // 16 vertices from permutations of (±1, 0, 0, 0)
-  for (let i = 0; i < 4; i++) {
-    const pos: Vec4 = [0, 0, 0, 0];
-    const neg: Vec4 = [0, 0, 0, 0];
-    pos[i] = s;
-    neg[i] = -s;
-    vertices.push(pos);
-    vertices.push(neg);
+  // The 24-cell has exactly 24 vertices:
+  // - 8 vertices from permutations of (±1, 0, 0, 0)
+  // - 16 vertices from (±1/√2, ±1/√2, ±1/√2, ±1/√2) with even # of minus signs
+  
+  const norm = s / Math.sqrt(2); // Normalize for unit radius
+
+  // 8 vertices: permutations of (±1, 0, 0, 0)
+  const coords = [[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]];
+  for (const coord of coords) {
+    vertices.push(vec4(coord[0] * s, coord[1] * s, coord[2] * s, coord[3] * s));
+    vertices.push(vec4(-coord[0] * s, -coord[1] * s, -coord[2] * s, -coord[3] * s));
   }
 
-  // 8 vertices from (±½, ±½, ±½, ±½)
-  const h = s / 2;
+  // 16 vertices: (±1/√2, ±1/√2, ±1/√2, ±1/√2) with even parity
   for (let i = 0; i < 16; i++) {
-    // Only include those with even number of negative signs
-    const v: Vec4 = [
-      (i & 1) ? h : -h,
-      (i & 2) ? h : -h,
-      (i & 4) ? h : -h,
-      (i & 8) ? h : -h,
+    const signs = [
+      (i & 1) ? 1 : -1,
+      (i & 2) ? 1 : -1,
+      (i & 4) ? 1 : -1,
+      (i & 8) ? 1 : -1,
     ];
-    vertices.push(v);
+    // Only include if even number of negative signs (even parity)
+    const negCount = signs.filter(x => x < 0).length;
+    if (negCount % 2 === 0) {
+      vertices.push(vec4(
+        signs[0] * norm, signs[1] * norm, 
+        signs[2] * norm, signs[3] * norm
+      ));
+    }
   }
 
-  // Edges: connect vertices at distance 1 from each other
+  // Edges: connect vertices at distance sqrt(2) from each other
   const edges: [number, number][] = [];
+  const targetDist2 = 2 * s * s; // sqrt(2)^2 = 2
+  
   for (let i = 0; i < vertices.length; i++) {
     for (let j = i + 1; j < vertices.length; j++) {
       const dx = vertices[i][0] - vertices[j][0];
@@ -123,7 +133,7 @@ export function create24Cell(size: number = 1): Shape4D {
       const dz = vertices[i][2] - vertices[j][2];
       const dw = vertices[i][3] - vertices[j][3];
       const dist2 = dx * dx + dy * dy + dz * dz + dw * dw;
-      if (Math.abs(dist2 - s * s) < 0.01) {
+      if (Math.abs(dist2 - targetDist2) < 0.01) {
         edges.push([i, j]);
       }
     }
@@ -233,37 +243,42 @@ export function create4DTorus(
 }
 
 // === 4D Sphere (approximation via geodesic points) ===
-const MAX_SPHERE_VERTICES = 256;
-const MAX_SPHERE_DETAIL = 5;
+const MAX_SPHERE_VERTICES = 200;
+const MAX_SPHERE_DETAIL = 4;
 
-export function create4DSphere(radius: number = 1, detail: number = 4): Shape4D {
-  // Cap detail level to prevent O(n^3) vertex explosion
+export function create4DSphere(radius: number = 1, detail: number = 3): Shape4D {
+  // Cap detail level to prevent vertex explosion
   detail = Math.min(detail, MAX_SPHERE_DETAIL);
 
   const vertices: Vec4[] = [];
   const edges: [number, number][] = [];
 
-  // Generate points on the 3-sphere using Hopf fibration-like sampling
-  for (let i = 0; i < detail && vertices.length < MAX_SPHERE_VERTICES; i++) {
-    const theta1 = (Math.PI * i) / detail;
-    for (let j = 0; j < detail * 2 && vertices.length < MAX_SPHERE_VERTICES; j++) {
-      const theta2 = (Math.PI * j) / detail;
-      for (let k = 0; k < 4 && vertices.length < MAX_SPHERE_VERTICES; k++) {
-        const theta3 = (Math.PI * k) / 2;
+  // Better S³ parameterization using two angles for better distribution
+  const n = detail * 8; // Number of points per dimension
+  
+  // Use spherical coordinates for S³: (ψ, θ, φ)
+  for (let i = 0; i < n && vertices.length < MAX_SPHERE_VERTICES; i++) {
+    for (let j = 0; j < n && vertices.length < MAX_SPHERE_VERTICES; j++) {
+      for (let k = 0; k < Math.ceil(n/2) && vertices.length < MAX_SPHERE_VERTICES; k++) {
+        const psi = (Math.PI * i) / n;        // 0 to π
+        const theta = (2 * Math.PI * j) / n;  // 0 to 2π  
+        const phi = (2 * Math.PI * k) / n;    // 0 to 2π
 
+        // S³ parameterization
         vertices.push(vec4(
-          radius * Math.sin(theta1) * Math.sin(theta2) * Math.cos(theta3),
-          radius * Math.sin(theta1) * Math.sin(theta2) * Math.sin(theta3),
-          radius * Math.sin(theta1) * Math.cos(theta2),
-          radius * Math.cos(theta1),
+          radius * Math.sin(psi) * Math.cos(theta),
+          radius * Math.sin(psi) * Math.sin(theta),
+          radius * Math.cos(psi) * Math.cos(phi),
+          radius * Math.cos(psi) * Math.sin(phi),
         ));
       }
     }
   }
 
-  // Connect nearby points (with edge count cap for performance)
-  const MAX_EDGES = 1024;
-  const threshold = (radius * 0.6) ** 2;
+  // Connect nearby points with better threshold
+  const MAX_EDGES = 800;
+  const threshold = (radius * Math.PI / n * 1.5) ** 2; // Adaptive threshold
+  
   for (let i = 0; i < vertices.length && edges.length < MAX_EDGES; i++) {
     for (let j = i + 1; j < vertices.length && edges.length < MAX_EDGES; j++) {
       const dx = vertices[i][0] - vertices[j][0];
@@ -279,7 +294,7 @@ export function create4DSphere(radius: number = 1, detail: number = 4): Shape4D 
 
   return {
     name: '4D Sphere',
-    description: 'The 3-sphere (S³) — sampled and wireframed',
+    description: 'The 3-sphere (S³) — better parameterized and wireframed',
     vertices,
     edges,
     color: '#ef5350',

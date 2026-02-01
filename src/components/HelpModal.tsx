@@ -107,9 +107,19 @@ export function HelpModal() {
           </p>
         </div>
 
-        <button className="help-start" onClick={toggleHelp}>
-          Start Exploring →
-        </button>
+        <div className="help-buttons">
+          <button className="help-tutorial" onClick={() => {
+            toggleHelp();
+            if ((window as any).restartTutorial) {
+              (window as any).restartTutorial();
+            }
+          }}>
+            🎓 Restart Tutorial
+          </button>
+          <button className="help-start" onClick={toggleHelp}>
+            Start Exploring →
+          </button>
+        </div>
       </div>
     </div>
   );
