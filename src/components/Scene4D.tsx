@@ -556,13 +556,13 @@ export function Scene4D() {
         )}
       </lineSegments>
       
-      {/* Second layer for glow effect (only with basic materials) */}
+      {/* Second layer for subtle glow effect (only with basic materials) */}
       {!enableShaderEffects && (
         <lineSegments geometry={linesGeo}>
           <lineBasicMaterial
             vertexColors
             transparent
-            opacity={edgeOpacity * 0.3}
+            opacity={edgeOpacity * 0.1}
             linewidth={4}
             toneMapped={false}
             blending={THREE.AdditiveBlending}
@@ -586,22 +586,20 @@ export function Scene4D() {
                 <meshStandardMaterial
                   color={shape.color}
                   emissive={shape.color}
-                  emissiveIntensity={0.4}
+                  emissiveIntensity={0.15}
                   metalness={0.1}
                   roughness={0.2}
-                  toneMapped={false}
                 />
               )}
             </mesh>
             {/* Glow halo */}
             <mesh>
-              <sphereGeometry args={[0.09, 12, 12]} />
+              <sphereGeometry args={[0.08, 12, 12]} />
               <meshBasicMaterial
                 color={shape.color}
                 transparent
-                opacity={0.2}
+                opacity={0.08}
                 blending={THREE.AdditiveBlending}
-                toneMapped={false}
               />
             </mesh>
           </group>

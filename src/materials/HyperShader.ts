@@ -93,9 +93,9 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec3 baseColor = getWColor(vWValue);
     
-    // Add pulse glow effect
-    vec3 finalColor = baseColor * (1.0 + vPulse * 2.0);
-    float finalOpacity = opacity * (1.0 + vPulse * 0.5);
+    // Add subtle pulse glow effect
+    vec3 finalColor = baseColor * (1.0 + vPulse * 0.6);
+    float finalOpacity = opacity * (1.0 + vPulse * 0.2);
     
     gl_FragColor = vec4(finalColor, finalOpacity);
   }
